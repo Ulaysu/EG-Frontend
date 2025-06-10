@@ -1,10 +1,11 @@
 <script setup>
+import home from './components/Home.vue';
 
 </script>
 
 <template>
-  <h1 class="text-3xl font-bold underline">Hello</h1>
- 
+  
+ <home />
 
 
 </template>
