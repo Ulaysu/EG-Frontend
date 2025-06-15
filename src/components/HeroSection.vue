@@ -38,15 +38,15 @@
 
           <div class="mt-8 flex items-center justify-center lg:justify-start space-x-4 text-sm text-slate-500">
             <div class="flex items-center">
-              <span class="text-green-500 mr-1">✔</span>
+              <CheckCircle class="text-green-500 mr-1"/>
               <span>Verified Guides</span>
             </div>
             <div class="flex items-center">
-              <span class="text-green-500 mr-1">✔</span>
+              <CheckCircle class="text-green-500 mr-1"/>
               <span>Secure Payments</span>
             </div>
             <div class="flex items-center">
-              <span class="text-green-500 mr-1">✔</span>
+              <CheckCircle class="text-green-500 mr-1"/>
               <span>24/7 Support</span>
             </div>
           </div>
@@ -146,5 +146,6 @@ import {
   ShieldCheck,
   MapPin,
   Users,
-  Compass, } from 'lucide-vue-next'
+  Compass, 
+  CheckCircle} from 'lucide-vue-next'
 </script>
