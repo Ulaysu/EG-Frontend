@@ -5,6 +5,7 @@
     <Problems/>
     <solutions/>
     <PlatformFeatures/>
+    <GuideFeatures/>
 </template>
 <script setup>
     import { ref, onMounted, computed } from 'vue'
@@ -14,6 +15,7 @@
     import Problems from './Problems.vue'
     import solutions from './Solutions.vue'
     import PlatformFeatures from './PlatformFeatures.vue'
+    import GuideFeatures from './GuideFeatures.vue'
     
 
 </script>
