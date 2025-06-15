@@ -16,7 +16,7 @@
         <div class="grid md:grid-cols-3 gap-8">
           <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6">
             <div class="w-16 h-16 bg-amber-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              ✅
+              <CheckCircle class="w-8 h-8 text-white"/>
             </div>
             <h3 class="text-xl font-bold mb-2">Verified Guides</h3>
             <p class="text-white/80">
@@ -26,7 +26,7 @@
 
           <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6">
             <div class="w-16 h-16 bg-amber-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              💳
+              <CreditCard class="w-8 h-8 text-white" />
             </div>
             <h3 class="text-xl font-bold mb-2">Secure Payments</h3>
             <p class="text-white/80">
@@ -36,7 +36,7 @@
 
           <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6">
             <div class="w-16 h-16 bg-amber-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              ⭐
+              <Star class="w-8 h-8 text-white" />
             </div>
             <h3 class="text-xl font-bold mb-2">Real Reviews</h3>
             <p class="text-white/80">
@@ -50,4 +50,6 @@
 
 
 </template>
-<script setup></script>
+<script setup>
+  import { CheckCircle, CreditCard, Star } from 'lucide-vue-next'
+</script>
