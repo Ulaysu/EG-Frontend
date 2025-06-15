@@ -59,12 +59,13 @@
 
             <div class="space-y-4">
               <div class="relative">
+                
                 <input 
                   type="text" 
                   placeholder="What would you like to experience?" 
                   class="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
                 />
-                <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400">🔍</span>
+                <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
               </div>
 
               <div class="grid grid-cols-2 gap-4">
@@ -76,8 +77,7 @@
                     <option>Bakau</option>
                     <option>Brikama</option>
                   </select>
-                  <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400">📍</span>
-                </div>
+                  <MapPin class="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />                </div>
 
                 <div class="relative">
                   <input 
@@ -85,7 +85,7 @@
                     placeholder="Date" 
                     class="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
                   />
-                  <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400">📅</span>
+                  <Calendar class="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
                 </div>
               </div>
 
@@ -98,7 +98,7 @@
                     <option>3-5 People</option>
                     <option>6+ People</option>
                   </select>
-                  <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400">👥</span>
+                  <Users class="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"/>
                 </div>
 
                 <div class="relative">
@@ -109,7 +109,7 @@
                     <option>Nature</option>
                     <option>Food</option>
                   </select>
-                  <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400">🧭</span>
+                  <Compass class="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
                 </div>
               </div>
 
@@ -137,4 +137,14 @@
   </section>
 
 </template>
-<script setup></script>
+<script setup>
+import { 
+  
+  CreditCard,
+  Search,
+  Calendar,
+  ShieldCheck,
+  MapPin,
+  Users,
+  Compass, } from 'lucide-vue-next'
+</script>
