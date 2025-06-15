@@ -14,4 +14,6 @@
     import Problems from './Problems.vue'
     import solutions from './Solutions.vue'
     import PlatformFeatures from './PlatformFeatures.vue'
+    
+
 </script>

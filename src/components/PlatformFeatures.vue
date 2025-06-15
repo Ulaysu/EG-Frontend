@@ -18,7 +18,7 @@
         <!-- Feature 1 -->
         <div class="text-center p-6 hover:bg-amber-50 rounded-xl transition-colors duration-300">
           <div class="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            🌍
+            <Globe class="w-8 h-8 text-amber-600" />
           </div>
           <h3 class="text-xl font-bold text-slate-800 mb-2">Browse & Book Experiences</h3>
           <p class="text-slate-600">
@@ -29,7 +29,7 @@
         <!-- Feature 2 -->
         <div class="text-center p-6 hover:bg-amber-50 rounded-xl transition-colors duration-300">
           <div class="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            📍
+            <MapPin class="w-8 h-8 text-amber-600" />
           </div>
           <h3 class="text-xl font-bold text-slate-800 mb-2">Filter by Location & Category</h3>
           <p class="text-slate-600">
@@ -40,7 +40,7 @@
         <!-- Feature 3 -->
         <div class="text-center p-6 hover:bg-amber-50 rounded-xl transition-colors duration-300">
           <div class="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            ⭐
+            <Star class="w-8 h-8 text-amber-600" />
           </div>
           <h3 class="text-xl font-bold text-slate-800 mb-2">Real Reviews</h3>
           <p class="text-slate-600">
@@ -51,7 +51,7 @@
         <!-- Feature 4 -->
         <div class="text-center p-6 hover:bg-amber-50 rounded-xl transition-colors duration-300">
           <div class="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            💳
+            <CreditCard class="w-8 h-8 text-amber-600" />
           </div>
           <h3 class="text-xl font-bold text-slate-800 mb-2">Secure Online Payments</h3>
           <p class="text-slate-600">
@@ -62,7 +62,7 @@
         <!-- Feature 5 -->
         <div class="text-center p-6 hover:bg-amber-50 rounded-xl transition-colors duration-300">
           <div class="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            💬
+            <MessageCircle class="w-8 h-8 text-amber-600" />
           </div>
           <h3 class="text-xl font-bold text-slate-800 mb-2">Live Chat with Guides</h3>
           <p class="text-slate-600">
@@ -73,7 +73,7 @@
         <!-- Feature 6 -->
         <div class="text-center p-6 hover:bg-amber-50 rounded-xl transition-colors duration-300">
           <div class="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            🌐
+            <Languages class="w-8 h-8 text-amber-600" />
           </div>
           <h3 class="text-xl font-bold text-slate-800 mb-2">Multi-Language Support</h3>
           <p class="text-slate-600">
@@ -84,4 +84,22 @@
     </div>
   </section>
 </template>
-<script setup></script>
+<script setup>
+    import {
+  Globe,
+  MapPin,
+  Star,
+  CreditCard,
+  MessageCircle,
+  Languages,
+  Megaphone,
+  CheckCircle,
+  TrendingUp,
+  ChevronRight,
+  Menu,
+  Search,
+  Calendar,
+  Users,
+  Heart,
+} from 'lucide-vue-next'
+</script>
