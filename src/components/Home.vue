@@ -4,6 +4,7 @@
     <Features/>
     <Problems/>
     <solutions/>
+    <PlatformFeatures/>
 </template>
 <script setup>
     import { ref, onMounted, computed } from 'vue'
@@ -12,4 +13,5 @@
     import Features from './Features.vue'
     import Problems from './Problems.vue'
     import solutions from './Solutions.vue'
+    import PlatformFeatures from './PlatformFeatures.vue'
 </script>
