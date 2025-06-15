@@ -19,7 +19,7 @@
           <div class="flex items-start">
             <div class="mr-4 mt-1">
               <div class="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
-                🔍
+                <Search class="w-5 h-5 text-amber-600"/>
               </div>
             </div>
             <div>
@@ -36,7 +36,7 @@
           <div class="flex items-start">
             <div class="mr-4 mt-1">
               <div class="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
-                📅
+                <Calendar class="w-5 h-5 text-amber-600"/>
               </div>
             </div>
             <div>
@@ -53,7 +53,7 @@
           <div class="flex items-start">
             <div class="mr-4 mt-1">
               <div class="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
-                💳
+                <CreditCard class="w-5 h-5 text-amber-600"/>
               </div>
             </div>
             <div>
@@ -70,7 +70,7 @@
           <div class="flex items-start">
             <div class="mr-4 mt-1">
               <div class="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
-                🛡️
+                <ShieldCheck class="w-5 h-5 text-amber-600"/>
               </div>
             </div>
             <div>
@@ -87,4 +87,9 @@
 
 </template>
 <script setup>
+import { 
+  CreditCard,
+  Search,
+  Calendar,
+  ShieldCheck, } from 'lucide-vue-next'
 </script>
