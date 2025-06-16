@@ -8,6 +8,7 @@
     <GuideFeatures/>
     <RevenueModel/>
     <MarketPotential/>
+    <Testimonials/>
 </template>
 <script setup>
     import { ref, onMounted, computed } from 'vue'
@@ -20,5 +21,6 @@
     import GuideFeatures from './GuideFeatures.vue'
     import RevenueModel from './RevenueModel.vue'
     import MarketPotential from './MarketPotential.vue'
+    import Testimonials from './Testimonials.vue'
 
 </script>
