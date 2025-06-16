@@ -6,6 +6,7 @@
     <solutions/>
     <PlatformFeatures/>
     <GuideFeatures/>
+    <RevenueModel/>
 </template>
 <script setup>
     import { ref, onMounted, computed } from 'vue'
@@ -16,6 +17,6 @@
     import solutions from './Solutions.vue'
     import PlatformFeatures from './PlatformFeatures.vue'
     import GuideFeatures from './GuideFeatures.vue'
-    
+    import RevenueModel from './RevenueModel.vue'
 
 </script>
