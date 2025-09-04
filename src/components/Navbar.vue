@@ -3,7 +3,8 @@
     <div class="container mx-auto px-4">
       <div class="flex items-center justify-between h-16 md:h-20">
         <!-- Logo -->
-        <div class="flex items-center space-x-2">
+        <router-link :to="{name: 'home'}" class="text-2xl font-bold text-amber-600">
+          <div class="flex items-center space-x-2">
           <div class="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg flex items-center justify-center">
             <span class="text-white font-bold text-lg">EG</span>
           </div>
@@ -12,10 +13,12 @@
             <div class="text-xs text-amber-600 font-medium">Discover the Smiling Coast</div>
           </div>
         </div>
+        </router-link>
+          
 
         <!-- Desktop Navigation -->
         <nav class="hidden md:flex items-center space-x-8">
-          <a href="#experiences" class="text-slate-600 hover:text-amber-600 transition-colors font-medium">Experiences</a>
+          <router-link :to="{name: 'tour'}" class="text-slate-600 hover:text-amber-600 transition-colors font-medium">Experiences</router-link >
           <a href="#features" class="text-slate-600 hover:text-amber-600 transition-colors font-medium">Features</a>
           <a href="#guides" class="text-slate-600 hover:text-amber-600 transition-colors font-medium">For Guides</a>
           <a href="#testimonials" class="text-slate-600 hover:text-amber-600 transition-colors font-medium">Testimonials</a>

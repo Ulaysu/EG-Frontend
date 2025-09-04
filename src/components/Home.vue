@@ -1,13 +1,13 @@
 <template>
-    <navbar />
+    <!--<navbar />-->
     <heroSection />
     <Features/>
-    <Problems/>
-    <solutions/>
-    <PlatformFeatures/>
+    <!--<Problems/>-->
+    <!--<solutions/>-->
+    <!--<PlatformFeatures/>-->
     <GuideFeatures/>
-    <RevenueModel/>
-    <MarketPotential/>
+    <!--<RevenueModel/>-->
+    <!--<MarketPotential/>-->
     <Testimonials/>
 </template>
 <script setup>
