@@ -54,18 +54,20 @@
         <!-- Mobile Navigation -->
        <div v-if="mobileMenuOpen" class="md:hidden mt-4 space-y-4">
         <nav class="flex flex-col space-y-3 text-slate-600 font-medium">
-          <a href="#experiences" class="hover:text-amber-600 transition-colors">Experiences</a>
-          <a href="#features" class="hover:text-amber-600 transition-colors">Features</a>
-          <a href="#guides" class="hover:text-amber-600 transition-colors">For Guides</a>
-          <a href="#testimonials" class="hover:text-amber-600 transition-colors">Testimonials</a>
+          <router-link :to="{name: 'tour'}" class="hover:text-amber-600 transition-colors">Experiences</router-link>
+        
         </nav>
         <div class="flex flex-col gap-2 mt-4">
-          <button class="border border-amber-500 text-amber-600 hover:bg-amber-50 px-4 py-2 rounded-md">
-            Log In
-          </button>
-          <button class="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white px-4 py-2 rounded-md">
+          <router-link :to="{name: 'login'}">
+            <button class="border border-amber-500 text-amber-600 hover:bg-amber-50 px-4 py-2 rounded-md">
+              Log In
+            </button>
+          </router-link>
+          <router-link :to="{name: 'signup'}">
+            <button class="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white px-4 py-2 rounded-md">
             Sign Up
           </button>
+          </router-link>
         </div>
       </div>
 
