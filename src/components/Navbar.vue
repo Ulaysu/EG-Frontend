@@ -19,9 +19,6 @@
         <!-- Desktop Navigation -->
         <nav class="hidden md:flex items-center space-x-8">
           <router-link :to="{name: 'tour'}" class="text-slate-600 hover:text-amber-600 transition-colors font-medium">Experiences</router-link >
-          <a href="#features" class="text-slate-600 hover:text-amber-600 transition-colors font-medium">Features</a>
-          <a href="#guides" class="text-slate-600 hover:text-amber-600 transition-colors font-medium">For Guides</a>
-          <a href="#testimonials" class="text-slate-600 hover:text-amber-600 transition-colors font-medium">Testimonials</a>
 
           <div class="flex items-center space-x-3">
             <router-link :to="{name: 'login'}">
