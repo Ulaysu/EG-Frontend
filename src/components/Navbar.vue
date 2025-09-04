@@ -24,12 +24,17 @@
           <a href="#testimonials" class="text-slate-600 hover:text-amber-600 transition-colors font-medium">Testimonials</a>
 
           <div class="flex items-center space-x-3">
-            <button class="border border-amber-500 text-amber-600 hover:bg-amber-50 px-4 py-2 rounded-md">
+            <router-link :to="{name: 'login'}">
+              <button class="border border-amber-500 text-amber-600 hover:bg-amber-50 px-4 py-2 rounded-md">
               Log In
             </button>
-            <button class="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white px-4 py-2 rounded-md">
+            </router-link>
+            <router-link :to="{name: 'signup'}">
+              <button class="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white px-4 py-2 rounded-md">
               Sign Up
             </button>
+            </router-link>
+             
           </div>
         </nav>
 
