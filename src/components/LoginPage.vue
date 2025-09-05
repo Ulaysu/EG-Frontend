@@ -19,5 +19,5 @@
 </template>
 
 <script setup>
-import LoginForm from '@/components/LoginForm.vue'; // Updated import path to match Vue convention
+import LoginForm from '@/components/Login.vue';
 </script>
