@@ -1,9 +1,9 @@
 <template>
   <div class="min-h-screen bg-gradient-to-br from-amber-400 via-orange-500 to-orange-600 relative overflow-hidden">
     <div
-      class="absolute inset-0 bg-cover bg-center opacity-20"
+      class="absolute inset-0 bg-cover bg-center opacity-80"
       :style="{
-        backgroundImage: 'url(\'/beautiful-gambian-landscape-with-baobab-trees-and-.jpg\')',
+        backgroundImage: 'url(/src/assets/baobab.jpeg)',
       }"
     />
 
@@ -12,6 +12,7 @@
     <div class="absolute bottom-32 left-1/4 w-20 h-20 bg-amber-400/25 rounded-full blur-md animate-pulse delay-1000" />
     <div class="absolute bottom-20 right-1/3 w-28 h-28 bg-orange-300/35 rounded-full blur-xl animate-bounce delay-500" />
 
+    
     <div class="relative z-10 flex items-center justify-center min-h-screen p-4">
       <LoginForm />
     </div>
