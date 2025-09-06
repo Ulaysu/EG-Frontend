@@ -1,9 +1,9 @@
 <template>
   <div class="min-h-screen bg-gradient-to-br from-amber-400 via-orange-500 to-orange-600 relative overflow-hidden">
     <div
-      class="absolute inset-0 bg-cover bg-center opacity-80"
+      class="absolute inset-0 bg-cover bg-center opacity-20"
       :style="{
-        backgroundImage: 'url(/src/assets/baobab.jpeg)',
+        backgroundImage: 'url(/src/assets/beautiful-gambian-landscape-with-baobab-trees-and-.jpg)',
       }"
     />
 
