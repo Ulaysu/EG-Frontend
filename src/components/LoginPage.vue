@@ -3,7 +3,7 @@
     <div
       class="absolute inset-0 bg-cover bg-center opacity-20"
       :style="{
-        backgroundImage: 'url(/src/assets/beautiful-gambian-landscape-with-baobab-trees-and-.jpg)',
+        backgroundImage: 'url(/src/assets/beautiful2.jpg)',
       }"
     />
 

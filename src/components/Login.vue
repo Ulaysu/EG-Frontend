@@ -20,7 +20,7 @@
               type="email"
               placeholder="Enter your email"
               v-model="email"
-              class="pl-10 block w-full rounded-lg border border-slate-200 focus:border-amber-500 focus:ring-amber-500/20 h-12"
+              class="pl-10 block w-full rounded-lg border border-slate-200 focus:border-amber-500 focus:ring-amber-500/20 heignt h-12"
             />
           </div>
         </div>
