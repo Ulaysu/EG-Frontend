@@ -12,9 +12,9 @@ function normalizeTour(rawTour) {
   }
 }
 
-export async function getTours() {
-  const payload = await Request('/tours?pageNumber=1&pageSize=10')
-console.log('Received tours payload:', payload)
+export async function getTours(pageNumber = 1, pageSize = 10) {
+  const payload = await Request(`/tours?pageNumber=${pageNumber}&pageSize=${pageSize}`)
+  
   if (!Array.isArray(payload)) {
     throw createAppError('Unexpected tours response format.', {
       statusCode: null,
