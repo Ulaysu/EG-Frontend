@@ -1,4 +1,4 @@
-import { request, createAppError } from './httpClient'
+import { Request, createAppError } from './httpClient'
 
 function normalizeTour(rawTour) {
   return {
@@ -13,8 +13,8 @@ function normalizeTour(rawTour) {
 }
 
 export async function getTours() {
-  const payload = await request('/api/v1/tours')
-
+  const payload = await Request('/tours?pageNumber=1&pageSize=10')
+console.log('Received tours payload:', payload)
   if (!Array.isArray(payload)) {
     throw createAppError('Unexpected tours response format.', {
       statusCode: null,

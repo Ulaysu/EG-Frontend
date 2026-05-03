@@ -3,16 +3,19 @@ import { API_BASE_URL } from "@/config/env";
 const DEFAULT_TIMEOUT = 10000; // 10 seconds
 
 function buildURL(path) {
-    if(!path.startsWith('/')) {
-        throw new Error('Path must start with a forward slash (/)');
-    }
-
   if (!API_BASE_URL) {
-    throw createAppError('API base URL is missing. Set VITE_API_BASE_URL in your environment.', {
-      statusCode: null,
-      code: 'MISSING_API_BASE_URL'
-    });
-  }}
+    throw createAppError('Missing API base URL');
+  }
+
+  // remove leading slash to avoid path reset
+  const cleanPath = path.replace(/^\/+/, '');
+
+  const url = new URL(cleanPath, API_BASE_URL + '/').toString();
+
+  console.log('FINAL URL:', url);
+
+  return url;
+}
 
 function createAppError(message, {statusCode = null, code = 'REQUEST FAILED', cause = null} = {}) {
     return { message, statusCode, code, cause };
@@ -23,7 +26,7 @@ export async function Request(path, { method = 'GET', headers = {}, body, timeou
     const timeoutId = setTimeout(() => controller.abort(), timeout);
 
       try {
-    const response = await fetch(buildUrl(path), {
+    const response = await fetch(buildURL(path), {
       method,
       headers: {
         'Content-Type': 'application/json',
@@ -33,10 +36,14 @@ export async function Request(path, { method = 'GET', headers = {}, body, timeou
       signal: controller.signal
     })
 
+     // 👇 ADD DEBUG LOGS HERE
+    console.log('STATUS:', response.status);
+    console.log('CONTENT-TYPE:', response.headers.get('content-type'));
+
     const contentType = response.headers.get('content-type') || ''
     const isJson = contentType.includes('application/json')
     const payload = isJson ? await response.json() : null
-
+ console.log('PAYLOAD:', payload); // Log the raw payload for debugging
     if (!response.ok) {
       throw createAppError(payload?.message || 'Request failed', {
         statusCode: response.status,

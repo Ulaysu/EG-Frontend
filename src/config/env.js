@@ -5,3 +5,5 @@ if(!rawBaseURL) {
 }
 
 export const API_BASE_URL = (rawBaseURL || '').replace(/\/+$/, ''); // Remove trailing slashes  
+
+console.log('BASE URL:', API_BASE_URL);
