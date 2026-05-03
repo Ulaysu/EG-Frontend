@@ -13,6 +13,7 @@ function normalizeTour(rawTour) {
 }
 
 export async function getTours(pageNumber = 1, pageSize = 10) {
+  // Added Pagination parameters to the request URL
   const payload = await Request(`/tours?pageNumber=${pageNumber}&pageSize=${pageSize}`)
   
   if (!Array.isArray(payload)) {
