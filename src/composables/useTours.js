@@ -38,12 +38,12 @@ export function useTours() {
     })
   })
 
-  async function loadTours() {
+  async function loadTours(pageNumber = 1, pageSize = 10) {
     isLoading.value = true
     error.value = null
 
     try {
-      tours.value = await getTours()
+      tours.value = await getTours(pageNumber, pageSize)
     } catch (err) {
       error.value = err
       tours.value = []
@@ -52,8 +52,8 @@ export function useTours() {
     }
   }
 
-  function retry() {
-    return loadTours()
+  function retry(pageNumber = 1, pageSize = 10) {
+    return loadTours(pageNumber, pageSize)
   }
 
   return {
