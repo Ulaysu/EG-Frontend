@@ -1,6 +1,6 @@
 <script setup>
-import TourHero from '@/components/tour/tour-hero.vue'
-import TourInfo from '@/components/tour/tour-info.vue'
+import TourHero from '@/components/tours/tour-hero.vue'
+import TourInfo from '@/components/tours/tour-info.vue'
 import BookingCard from '@/components/tours/booking-card.vue'
 
 // Sample data (later this will come from API)
