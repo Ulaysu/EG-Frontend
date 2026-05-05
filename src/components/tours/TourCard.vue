@@ -1,5 +1,6 @@
 <template>
-  <article class="group bg-white rounded-2xl border border-amber-100 overflow-hidden shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200">
+  <RouterLink :to="{ name: 'tour-details', params: { id: tour.id } }" class="block">
+     <article class="group bg-white rounded-2xl border border-amber-100 overflow-hidden shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200">
     <div class="relative">
       <img :src="tour.imageUrl" :alt="tour.title" class="w-full h-52 object-cover" />
       <div class="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
@@ -22,9 +23,12 @@
       </div>
     </div>
   </article>
+  </RouterLink>
+ 
 </template>
 
 <script setup>
+import TourDetails from '@/Pages/TourDetails.vue';
 defineProps({
   tour: {
     type: Object,

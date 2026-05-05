@@ -19,6 +19,11 @@ const routes = [
     name: "tour",
     component: () => import("../components/Tours.vue")
 },
+{
+    path: "/tours/:id",
+    name: "tour-details",
+    component: () => import("../Pages/TourDetails.vue")
+},
 
  // Catch-all route for 404 Not Found
   {
