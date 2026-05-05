@@ -3,19 +3,7 @@ import TourHero from '@/components/tours/tour-hero.vue'
 import TourInfo from '@/components/tours/tour-info.vue'
 import BookingCard from '@/components/tours/booking-card.vue'
 
-// Sample data (later this will come from API)
-const tourData = {
-  title: "Discover the Magic of Santorini: A 7-Day Greek Island Adventure",
-  location: "Santorini, Greece",
-  price: 2499,
-  isAvailable: true,
-  description:
-    "Experience the breathtaking beauty of Santorini on this unforgettable 7-day journey...",
-  startDate: "2026-06-15",
-  endDate: "2026-06-22",
-  participants: 8,
-  imageUrl: "/images/tour-hero.jpg",
-}
+
 </script>
 
 <template>
