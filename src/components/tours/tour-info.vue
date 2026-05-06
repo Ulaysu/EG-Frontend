@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 
 // If you install lucide-vue-next
-// import { MapPin, Calendar, Users } from 'lucide-vue-next'
+import { MapPin, Calendar, Users } from 'lucide-vue-next'
 
 defineProps({
   location: String,
@@ -31,7 +31,7 @@ const formatDate = (dateString) => {
     <div class="flex flex-wrap items-start justify-between gap-4">
       <div class="flex items-center gap-2 text-muted-foreground">
         <!-- Replace with icon if installed -->
-        <span>📍</span>
+        <MapPin class="h-5 w-5" />
         <span class="text-lg">{{ location }}</span>
       </div>
 
@@ -75,7 +75,7 @@ const formatDate = (dateString) => {
 
       <div class="flex items-start gap-3">
         <div class="rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 p-2">
-          <span class="text-white">📅</span>
+          <Calendar class="h-5 w-5 text-white" />
         </div>
         <div>
           <p class="text-sm font-medium text-muted-foreground">Start Date</p>
@@ -87,7 +87,7 @@ const formatDate = (dateString) => {
 
       <div class="flex items-start gap-3">
         <div class="rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 p-2">
-          <span class="text-white">📅</span>
+          <Calendar class="h-5 w-5 text-white" />
         </div>
         <div>
           <p class="text-sm font-medium text-muted-foreground">End Date</p>
@@ -101,7 +101,7 @@ const formatDate = (dateString) => {
 
     <!-- Participants -->
     <div class="flex items-center gap-3 text-muted-foreground md:hidden">
-      <span>👥</span>
+      <Users class="h-5 w-5" />
       <span>{{ participants }} spots remaining</span>
     </div>
 
