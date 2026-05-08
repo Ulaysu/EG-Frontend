@@ -1,6 +1,7 @@
 import './assets/main.css'
 import './style.css'
 import { createApp } from 'vue'
+import{createPinia} from 'pinia'
 import App from './App.vue'
 import * as lucide from 'lucide-vue-next'
 import router from './router'
@@ -11,6 +12,7 @@ Object.keys(lucide).forEach((iconName) => {
   createApp(App).component(iconName, lucide[iconName])
 })
 
+app.use(createPinia())
 app.use(router)
 app.mount('#app')
 
