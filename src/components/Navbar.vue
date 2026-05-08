@@ -19,8 +19,29 @@
         <!-- Desktop Navigation -->
         <nav class="hidden md:flex items-center space-x-8">
           <router-link :to="{name: 'tour'}" class="text-slate-600 hover:text-amber-600 transition-colors font-medium">Experiences</router-link >
+          <router-link
+            v-if="authStore.isAuthenticated"
+            :to="{name: 'dashboard'}"
+            class="text-slate-600 hover:text-amber-600 transition-colors font-medium"
+          >
+            Dashboard
+          </router-link>
+          <router-link
+            v-if="authStore.isAuthenticated"
+            :to="{name: 'bookings'}"
+            class="text-slate-600 hover:text-amber-600 transition-colors font-medium"
+          >
+            Bookings
+          </router-link>
+          <router-link
+            v-if="authStore.isAuthenticated"
+            :to="{name: 'profile'}"
+            class="text-slate-600 hover:text-amber-600 transition-colors font-medium"
+          >
+            Profile
+          </router-link>
 
-          <div class="flex items-center space-x-3">
+          <div v-if="!authStore.isAuthenticated" class="flex items-center space-x-3">
             <router-link :to="{name: 'login'}">
               <button class="border border-amber-500 text-amber-600 hover:bg-amber-50 px-4 py-2 rounded-md">
               Log In
@@ -33,6 +54,14 @@
             </router-link>
              
           </div>
+          <button
+            v-else
+            type="button"
+            class="border border-amber-500 text-amber-600 hover:bg-amber-50 px-4 py-2 rounded-md"
+            @click="handleLogout"
+          >
+            Log Out
+          </button>
         </nav>
 
         <!-- Mobile Menu Button -->
@@ -54,21 +83,53 @@
         <!-- Mobile Navigation -->
        <div v-if="mobileMenuOpen" class="md:hidden mt-4 space-y-4">
         <nav class="flex flex-col space-y-3 text-slate-600 font-medium">
-          <router-link :to="{name: 'tour'}" class="hover:text-amber-600 transition-colors">Experiences</router-link>
+          <router-link :to="{name: 'tour'}" class="hover:text-amber-600 transition-colors" @click="closeMobileMenu">Experiences</router-link>
+          <router-link
+            v-if="authStore.isAuthenticated"
+            :to="{name: 'dashboard'}"
+            class="hover:text-amber-600 transition-colors"
+            @click="closeMobileMenu"
+          >
+            Dashboard
+          </router-link>
+          <router-link
+            v-if="authStore.isAuthenticated"
+            :to="{name: 'bookings'}"
+            class="hover:text-amber-600 transition-colors"
+            @click="closeMobileMenu"
+          >
+            Bookings
+          </router-link>
+          <router-link
+            v-if="authStore.isAuthenticated"
+            :to="{name: 'profile'}"
+            class="hover:text-amber-600 transition-colors"
+            @click="closeMobileMenu"
+          >
+            Profile
+          </router-link>
         
         </nav>
-        <div class="flex flex-col gap-2 mt-4">
+        <div v-if="!authStore.isAuthenticated" class="flex flex-col gap-2 mt-4">
           <router-link :to="{name: 'login'}">
-            <button class="border border-amber-500 text-amber-600 hover:bg-amber-50 px-4 py-2 rounded-md">
+            <button class="border border-amber-500 text-amber-600 hover:bg-amber-50 px-4 py-2 rounded-md" @click="closeMobileMenu">
               Log In
             </button>
           </router-link>
           <router-link :to="{name: 'signup'}">
-            <button class="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white px-4 py-2 rounded-md">
+            <button class="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white px-4 py-2 rounded-md" @click="closeMobileMenu">
             Sign Up
           </button>
           </router-link>
         </div>
+        <button
+          v-else
+          type="button"
+          class="border border-amber-500 text-amber-600 hover:bg-amber-50 px-4 py-2 rounded-md"
+          @click="handleLogout"
+        >
+          Log Out
+        </button>
       </div>
 
 
@@ -77,5 +138,20 @@
 </template>
 <script setup>
     import { ref } from 'vue';
+    import { useRouter } from 'vue-router';
+    import { useAuthStore } from '@/stores/authStore';
+
     const mobileMenuOpen = ref(false);
+    const router = useRouter();
+    const authStore = useAuthStore();
+
+    const closeMobileMenu = () => {
+      mobileMenuOpen.value = false;
+    };
+
+    const handleLogout = async () => {
+      authStore.logout();
+      closeMobileMenu();
+      await router.replace('/home');
+    };
 </script>
