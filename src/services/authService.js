@@ -2,7 +2,7 @@ import { Request } from './httpClient'
 import { getToken, removeToken, setToken } from './tokenService'
 
 export const login = async (email, password) => {
-  const response = await Request('/api/v1/auth/login', {
+  const response = await Request('/auth/login', {
     method: 'POST',
     body: { email, password }
   })

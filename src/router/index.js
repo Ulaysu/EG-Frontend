@@ -65,7 +65,7 @@ router.beforeEach((to) => {
     const token = getToken();
 
     if (to.meta.requiresAuth && !token) {
-        return { path: '/login' };
+        return { path: '/login', query: { redirect: to.fullPath } };
     }
 
     if (token && guestOnlyRouteNames.has(to.name)) {
