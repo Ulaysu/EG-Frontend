@@ -1,4 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import { getToken } from '@/services/tokenService';
+
+const guestOnlyRouteNames = new Set(['login', 'signup']);
+
 const routes = [
   { path: "/home", 
     name: "home",
@@ -24,6 +28,24 @@ const routes = [
     name: "tour-details",
     component: () => import("../Pages/TourDetails.vue")
 },
+{
+    path: "/profile",
+    name: "profile",
+    component: () => import("../components/Profile.vue"),
+    meta: { requiresAuth: true }
+},
+{
+    path: "/dashboard",
+    name: "dashboard",
+    component: () => import("../components/Dashboard.vue"),
+    meta: { requiresAuth: true }
+},
+{
+    path: "/bookings",
+    name: "bookings",
+    component: () => import("../components/Bookings.vue"),
+    meta: { requiresAuth: true }
+},
 
  // Catch-all route for 404 Not Found
   {
@@ -38,4 +60,19 @@ const router = createRouter({
     history: createWebHistory(),
     routes,
 });
+
+router.beforeEach((to) => {
+    const token = getToken();
+
+    if (to.meta.requiresAuth && !token) {
+        return { path: '/login' };
+    }
+
+    if (token && guestOnlyRouteNames.has(to.name)) {
+        return { path: '/home' };
+    }
+
+    return true;
+});
+
 export default router;
