@@ -22,10 +22,15 @@
               type="text"
               placeholder="Enter your full name"
               v-model="formData.fullName"
+              autocomplete="name"
+              :aria-invalid="Boolean(validationErrors.fullName)"
+              aria-describedby="fullName-error"
               class="pl-10 block w-full rounded-lg border border-slate-200 bg-slate-50 focus:border-amber-500 focus:ring-amber-500 transition-colors h-12 !important"
-              required
             />
           </div>
+          <p v-if="validationErrors.fullName" id="fullName-error" class="text-sm font-medium text-red-600">
+            {{ validationErrors.fullName }}
+          </p>
         </div>
 
         <div class="space-y-2">
@@ -40,10 +45,15 @@
               type="email"
               placeholder="Enter your email"
               v-model="formData.email"
+              autocomplete="email"
+              :aria-invalid="Boolean(validationErrors.email)"
+              aria-describedby="signup-email-error"
               class="pl-10 block w-full rounded-lg border border-slate-200 bg-slate-50 focus:border-amber-500 focus:ring-amber-500 transition-colors h-12"
-              required
             />
           </div>
+          <p v-if="validationErrors.email" id="signup-email-error" class="text-sm font-medium text-red-600">
+            {{ validationErrors.email }}
+          </p>
         </div>
 
         <div class="space-y-2">
@@ -58,20 +68,34 @@
               type="password"
               placeholder="Create a secure password"
               v-model="formData.password"
+              autocomplete="new-password"
+              :aria-invalid="Boolean(validationErrors.password)"
+              aria-describedby="signup-password-error"
               class="pl-10 block w-full rounded-lg border border-slate-200 bg-slate-50 focus:border-amber-500 focus:ring-amber-500 transition-colors h-12"
-              required
             />
           </div>
+          <p v-if="validationErrors.password" id="signup-password-error" class="text-sm font-medium text-red-600">
+            {{ validationErrors.password }}
+          </p>
           <p class="text-xs text-slate-500">
             Your data is secure and used only to enhance your travel experience
           </p>
         </div>
 
+        <div
+          v-if="errorMessage"
+          class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700"
+          role="alert"
+        >
+          {{ errorMessage }}
+        </div>
+
         <button
           type="submit"
-          class="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+          :disabled="isLoading"
+          class="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:scale-100"
         >
-          Sign Up
+          {{ isLoading ? 'Creating account...' : 'Sign Up' }}
         </button>
       </form>
 
@@ -148,18 +172,95 @@
 </template>
 
 <script setup>
-import { reactive } from 'vue';
+import { reactive, ref } from 'vue';
+import { useRouter } from 'vue-router';
 import { User, Mail, Lock, Check } from 'lucide-vue-next';
+import { useAuthStore } from '@/stores/authStore';
 
-// Use `reactive` for state that is an object
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 const formData = reactive({
   fullName: '',
   email: '',
   password: '',
 });
 
-const handleSubmit = () => {
-  console.log('Sign up form submitted:', formData);
-  // Implement your sign-up logic here, e.g., API call
+const validationErrors = reactive({
+  fullName: '',
+  email: '',
+  password: '',
+});
+
+const errorMessage = ref('');
+const isLoading = ref(false);
+const authStore = useAuthStore();
+const router = useRouter();
+
+const getNameParts = () => {
+  const nameParts = formData.fullName.trim().split(/\s+/);
+
+  return {
+    firstName: nameParts[0] || '',
+    lastName: nameParts.slice(1).join(' ')
+  };
+};
+
+const validateForm = () => {
+  validationErrors.fullName = '';
+  validationErrors.email = '';
+  validationErrors.password = '';
+
+  const { firstName, lastName } = getNameParts();
+
+  if (!formData.fullName.trim()) {
+    validationErrors.fullName = 'Full name is required.';
+  } else if (!firstName || !lastName) {
+    validationErrors.fullName = 'Enter both first and last name.';
+  }
+
+  if (!formData.email.trim()) {
+    validationErrors.email = 'Email is required.';
+  } else if (!emailPattern.test(formData.email.trim())) {
+    validationErrors.email = 'Enter a valid email address.';
+  }
+
+  if (!formData.password) {
+    validationErrors.password = 'Password is required.';
+  } else if (formData.password.length < 6) {
+    validationErrors.password = 'Password must be at least 6 characters.';
+  }
+
+  return !validationErrors.fullName && !validationErrors.email && !validationErrors.password;
+};
+
+const buildRegisterPayload = () => {
+  const { firstName, lastName } = getNameParts();
+
+  return {
+    email: formData.email.trim(),
+    password: formData.password,
+    firstName,
+    lastName,
+    roles: ['user']
+  };
+};
+
+const handleSubmit = async () => {
+  errorMessage.value = '';
+
+  if (!validateForm()) {
+    return;
+  }
+
+  isLoading.value = true;
+
+  try {
+    await authStore.register(buildRegisterPayload());
+    await router.replace(authStore.isAuthenticated ? '/home' : '/login');
+  } catch (error) {
+    errorMessage.value = error?.message || 'Unable to create your account. Please try again.';
+  } finally {
+    isLoading.value = false;
+  }
 };
 </script>
