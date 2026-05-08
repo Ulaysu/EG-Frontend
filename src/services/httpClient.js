@@ -1,4 +1,5 @@
 import { API_BASE_URL } from "@/config/env";
+import {getToken}
 
 const DEFAULT_TIMEOUT = 10000; // 10 seconds
 
