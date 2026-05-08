@@ -16,7 +16,7 @@ export const login = async (email, password) => {
 }
 
 export const register = async (userData) => {
-  return Request('/api/v1/auth/register', {
+  return Request('/auth/register', {
     method: 'POST',
     body: userData
   })

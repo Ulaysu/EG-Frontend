@@ -82,6 +82,29 @@
           </p>
         </div>
 
+        <div class="space-y-2">
+          <label for="confirmPassword" class="text-sm font-medium text-slate-700 block">
+            Confirm Password
+          </label>
+          <div class="relative">
+            <Lock class="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
+            <input
+              id="confirmPassword"
+              name="confirmPassword"
+              type="password"
+              placeholder="Confirm your password"
+              v-model="formData.confirmPassword"
+              autocomplete="new-password"
+              :aria-invalid="Boolean(validationErrors.confirmPassword)"
+              aria-describedby="signup-confirm-password-error"
+              class="pl-10 block w-full rounded-lg border border-slate-200 bg-slate-50 focus:border-amber-500 focus:ring-amber-500 transition-colors h-12"
+            />
+          </div>
+          <p v-if="validationErrors.confirmPassword" id="signup-confirm-password-error" class="text-sm font-medium text-red-600">
+            {{ validationErrors.confirmPassword }}
+          </p>
+        </div>
+
         <div
           v-if="errorMessage"
           class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700"
@@ -183,12 +206,14 @@ const formData = reactive({
   fullName: '',
   email: '',
   password: '',
+  confirmPassword: '',
 });
 
 const validationErrors = reactive({
   fullName: '',
   email: '',
   password: '',
+  confirmPassword: '',
 });
 
 const errorMessage = ref('');
@@ -209,6 +234,7 @@ const validateForm = () => {
   validationErrors.fullName = '';
   validationErrors.email = '';
   validationErrors.password = '';
+  validationErrors.confirmPassword = '';
 
   const { firstName, lastName } = getNameParts();
 
@@ -230,7 +256,16 @@ const validateForm = () => {
     validationErrors.password = 'Password must be at least 6 characters.';
   }
 
-  return !validationErrors.fullName && !validationErrors.email && !validationErrors.password;
+  if (!formData.confirmPassword) {
+    validationErrors.confirmPassword = 'Confirm password is required.';
+  } else if (formData.confirmPassword !== formData.password) {
+    validationErrors.confirmPassword = 'Passwords do not match.';
+  }
+
+  return !validationErrors.fullName
+    && !validationErrors.email
+    && !validationErrors.password
+    && !validationErrors.confirmPassword;
 };
 
 const buildRegisterPayload = () => {
