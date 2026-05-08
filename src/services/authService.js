@@ -1,54 +1,38 @@
-import axios from "axios";
-
-const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
-  
-});
-
-export const getToken = () => localStorage.getItem("token");
-
-export const setToken = (token) => {
-  localStorage.setItem("token", token);
-};
-
-export const removeToken = () => {
-  localStorage.removeItem("token");
-};
+import { Request } from './httpClient'
+import { getToken, removeToken, setToken } from './tokenService'
 
 export const login = async (email, password) => {
-    const response = await api.post("api/vi/auth/login", { email, password });
+  const response = await Request('/api/v1/auth/login', {
+    method: 'POST',
+    body: { email, password }
+  })
 
-    const { token } = response.data?.token;
-    if (token) {
-        setToken(token);
-    }
-    return response.data;
-};
+  const token = response?.jwtToken
+  if (token) {
+    setToken(token)
+  }
 
-export const register = async(userData) => {
-    const response = await api.post("api/v1/auth/register", userData);
-    return response.data;
-};
+  return response
+}
 
-
+export const register = async (userData) => {
+  return Request('/api/v1/auth/register', {
+    method: 'POST',
+    body: userData
+  })
+}
 
 export const getMe = async () => {
-    const token = getToken();
-    const response = await api.get("api/v1/auth/me", {
-        headers: token
-            ? {
-                Authorization: `Bearer ${token}`,
-            }
-            : {},
-    });
-    return response.data;
-};  
+  return Request('/api/v1/auth/me')
+}
+
+export { getToken, setToken, removeToken }
 
 export default {
-   login,
+  login,
   register,
   getMe,
   getToken,
   setToken,
-  removeToken,
+  removeToken
 }
