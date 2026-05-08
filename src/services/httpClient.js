@@ -1,5 +1,5 @@
 import { API_BASE_URL } from "@/config/env";
-import {getToken}
+import {getToken} from "@/services/tokenService"
 
 const DEFAULT_TIMEOUT = 10000; // 10 seconds
 
@@ -25,12 +25,14 @@ function createAppError(message, {statusCode = null, code = 'REQUEST FAILED', ca
 export async function Request(path, { method = 'GET', headers = {}, body, timeout = DEFAULT_TIMEOUT } = {}){
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeout);
+    const token = getToken();
 
       try {
     const response = await fetch(buildURL(path), {
       method,
       headers: {
         'Content-Type': 'application/json',
+         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...headers
       },
       body: body ? JSON.stringify(body) : undefined,
