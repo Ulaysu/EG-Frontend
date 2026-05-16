@@ -10,6 +10,11 @@ export const createBooking = async (tourId, numberOfPeople) => {
   })
 }
 
+export const getMyBookings = async () => {
+  return Request('/bookings/my-bookings')
+}
+
 export default {
-  createBooking
+  createBooking,
+  getMyBookings
 }

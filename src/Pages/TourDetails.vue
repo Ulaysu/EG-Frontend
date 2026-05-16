@@ -75,6 +75,7 @@ onMounted(loadTourDetails)
           <div class="hidden lg:block">
             <div class="sticky top-8">
               <BookingCard
+                :tourId="tourData.id"
                 :price="tourData.price"
                 :participants="tourData.participants"
                 :isAvailable="tourData.isAvailable"
@@ -86,31 +87,18 @@ onMounted(loadTourDetails)
       </div>
 
       <!-- Mobile Booking Bar -->
-      <div class="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-card/95 p-4 backdrop-blur-sm lg:hidden">
-        <div class="flex items-center justify-between gap-4">
-          <div>
-            <span class="bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-2xl font-bold text-transparent">
-              ${{ tourData.price.toLocaleString() }}
-            </span>
-            <span class="text-sm text-muted-foreground"> / person</span>
-          </div>
-
-          <button
-            :disabled="!tourData.isAvailable"
-            :class="[
-              'rounded-xl px-8 py-3 font-semibold text-white shadow-md transition-all duration-300',
-              tourData.isAvailable
-                ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 hover:shadow-lg active:scale-[0.98]'
-                : 'bg-gradient-to-r from-amber-500 to-orange-500 opacity-50 cursor-not-allowed'
-            ]"
-          >
-            {{ tourData.isAvailable ? "Book Now" : "Sold Out" }}
-          </button>
-        </div>
+      <div class="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-card/95 p-3 backdrop-blur-sm lg:hidden">
+        <BookingCard
+          :tourId="tourData.id"
+          :price="tourData.price"
+          :participants="tourData.participants"
+          :isAvailable="tourData.isAvailable"
+          compact
+        />
       </div>
 
       <!-- Spacer for mobile -->
-      <div class="h-24 lg:hidden"></div>
+      <div class="h-72 lg:hidden"></div>
 
     </template>
 
