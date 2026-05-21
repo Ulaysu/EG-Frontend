@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import { getToken } from '@/services/tokenService';
+import { getToken, getRefreshToken, removeRefreshToken, removeToken } from '@/services/tokenService';
 
 const guestOnlyRouteNames = new Set(['login', 'signup']);
 
@@ -63,6 +63,18 @@ const router = createRouter({
 
 router.beforeEach((to) => {
     const token = getToken();
+    const tokenRefresh = getRefreshToken();
+    const tokenValid = isTokenValid();
+
+
+    if(token && !tokenValid) {
+      
+        if(!tokenRefresh){
+            removeToken();
+            removeRefreshToken();
+
+        }
+    }
 
     if (to.meta.requiresAuth && !token) {
         return { path: '/login', query: { redirect: to.fullPath } };

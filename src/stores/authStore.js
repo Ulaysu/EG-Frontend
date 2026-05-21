@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { login as loginRequest, register as registerRequest, getMe } from '../services/authService'
-import { getToken, removeToken, setToken } from '../services/tokenService'
+import { getToken, removeToken, setToken, getRefreshToken, setRefreshToken, removeRefreshToken, isTokenValid } from '../services/tokenService'
 
 const getAuthTokenFromResponse = (response) => response?.token || response?.jwtToken || response?.accessToken
 const getUserFromResponse = (response) => response?.user || response?.data?.user || response?.data || response || null
@@ -9,11 +9,11 @@ export const useAuthStore = defineStore('auth', {
   state: () => ({
     user: null,
     token: getToken(),
-     isRestoringSession: false
+    isRestoringSession: false
   }),
 
   getters: {
-    isAuthenticated: (state) => Boolean(state.token)
+    isAuthenticated: (state) => Boolean(state.token) && isTokenValid()
   },
 
   actions: {
@@ -26,10 +26,13 @@ export const useAuthStore = defineStore('auth', {
         setToken(token)
       }
 
-      const user = getUserFromResponse(response)
-      if (user) {
-        this.user = user
+      // ✅ Store refresh token
+      if (response?.refreshToken) {
+        setRefreshToken(response.refreshToken)
       }
+
+      const user = getUserFromResponse(response)
+      if (user) this.user = user
 
       return response
     },
@@ -43,9 +46,7 @@ export const useAuthStore = defineStore('auth', {
         setToken(token)
 
         const user = getUserFromResponse(response)
-        if (user) {
-          this.user = user
-        }
+        if (user) this.user = user
       }
 
       return response
@@ -55,6 +56,7 @@ export const useAuthStore = defineStore('auth', {
       this.user = null
       this.token = null
       removeToken()
+      removeRefreshToken() // ✅ clear refresh token on logout
     },
 
     async fetchMe() {
@@ -84,7 +86,5 @@ export const useAuthStore = defineStore('auth', {
         this.isRestoringSession = false
       }
     }
-
-
   }
 })
