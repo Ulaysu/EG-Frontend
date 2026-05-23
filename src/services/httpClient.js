@@ -6,6 +6,15 @@ const DEFAULT_TIMEOUT = 10000
 
 function buildURL(path) {
   if (!API_BASE_URL) throw createAppError('Missing API base URL')
+
+  if (/^https?:\/\//i.test(path)) {
+    return path
+  }
+
+  if (path.startsWith('/api/')) {
+    return new URL(path, API_BASE_URL).toString()
+  }
+
   const cleanPath = path.replace(/^\/+/, '')
   return new URL(cleanPath, API_BASE_URL + '/').toString()
 }

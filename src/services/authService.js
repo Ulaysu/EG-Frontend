@@ -62,9 +62,6 @@ export const refreshAccessToken = async () => {
 
 
 export {
-  login,
-  register,
-  getMe,
   getToken,
   setToken,
   removeToken,

@@ -1,13 +1,24 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getMyBookings } from '@/services/bookingService'
+import { useAuthStore } from '@/stores/authStore'
+import {
+  ensureModemPayAssets,
+  prepareModemPayInlineCheckout,
+  verifyModemPayPayment
+} from '@/services/paymentService'
 
 const router = useRouter()
+const authStore = useAuthStore()
 
 const bookings = ref([])
 const loading = ref(true)
 const error = ref('')
+const activePaymentBookingId = ref('')
+const verifyingPaymentBookingId = ref('')
+const paymentMessages = ref({})
+const paymentErrors = ref({})
 
 const formatDate = (value) => {
   if (!value) return '—'
@@ -48,8 +59,50 @@ const getStatusMessage = (status) => {
 }
 
 const goToTour = (tourId) => router.push(`/tours/${tourId}`)
-const goToCheckout = (bookingId) => router.push(`/checkout/${bookingId}`)
 const goToExplore = () => router.push('/tours')
+
+const getUserField = (...keys) => {
+  const user = authStore.user || {}
+  return keys.map((key) => user[key]).find(Boolean) || ''
+}
+
+const customerDetails = computed(() => {
+  const firstName = getUserField('firstName', 'givenName')
+  const lastName = getUserField('lastName', 'surname', 'familyName')
+  const fallbackName = getUserField('fullName', 'name', 'displayName', 'userName')
+  const customerName = fallbackName || [firstName, lastName].filter(Boolean).join(' ')
+
+  return {
+    customerName,
+    customerEmail: getUserField('email', 'emailAddress'),
+    customerPhone: getUserField('phone', 'phoneNumber', 'mobile', 'mobileNumber')
+  }
+})
+
+const setPaymentMessage = (bookingId, message) => {
+  paymentMessages.value = { ...paymentMessages.value, [bookingId]: message }
+}
+
+const setPaymentError = (bookingId, message) => {
+  paymentErrors.value = { ...paymentErrors.value, [bookingId]: message }
+}
+
+const clearPaymentFeedback = (bookingId) => {
+  setPaymentMessage(bookingId, '')
+  setPaymentError(bookingId, '')
+}
+
+const getPaymentButtonLabel = (bookingId) => {
+  if (verifyingPaymentBookingId.value === bookingId) return 'Verifying...'
+  if (activePaymentBookingId.value === bookingId) return 'Opening checkout...'
+  return 'Pay with Card'
+}
+
+const isPaymentBusy = (bookingId) => {
+  return activePaymentBookingId.value === bookingId || verifyingPaymentBookingId.value === bookingId
+}
+
+const isAnyPaymentBusy = () => Boolean(activePaymentBookingId.value || verifyingPaymentBookingId.value)
 
 const fetchBookings = async () => {
   loading.value = true
@@ -65,6 +118,79 @@ const fetchBookings = async () => {
     loading.value = false
   }
 
+}
+
+const handleCardPayment = async (booking) => {
+  const bookingId = booking?.bookingId
+  if (!bookingId || booking.status !== 'Pending' || isAnyPaymentBusy()) return
+
+  clearPaymentFeedback(bookingId)
+
+  let modal = null
+
+  try {
+    activePaymentBookingId.value = bookingId
+    await ensureModemPayAssets()
+
+    if (!window.ModemPayCheckout) {
+      throw new Error('Modem Pay checkout is not available.')
+    }
+
+    const checkout = await prepareModemPayInlineCheckout(bookingId, customerDetails.value)
+
+    modal = window.ModemPayCheckout({
+      amount: checkout.amount,
+      currency: checkout.currency,
+      public_key: checkout.publicKey,
+      payment_methods: checkout.paymentMethods,
+      title: checkout.title,
+      description: checkout.description,
+      customer: checkout.customer,
+      customer_email: checkout.customerEmail,
+      customer_name: checkout.customerName,
+      customer_phone: checkout.customerPhone,
+      metadata: checkout.metadata,
+
+      callback: async function (transaction) {
+        const transactionId = transaction?.id || transaction?.transactionId
+
+        if (!transactionId) {
+          setPaymentError(bookingId, 'Payment returned without a transaction reference. Please try again.')
+          return
+        }
+
+        try {
+          verifyingPaymentBookingId.value = bookingId
+          setPaymentMessage(bookingId, 'Verifying your payment...')
+          setPaymentError(bookingId, '')
+
+          await verifyModemPayPayment(transactionId)
+          await fetchBookings()
+
+          modal?.close?.()
+          setPaymentMessage(bookingId, 'Payment verified. Your booking is confirmed.')
+        } catch (e) {
+          setPaymentMessage(bookingId, '')
+          setPaymentError(bookingId, e?.message || 'Payment verification failed. Please try again.')
+        } finally {
+          verifyingPaymentBookingId.value = ''
+        }
+      },
+
+      onClose: function (cancelled) {
+        if (cancelled && verifyingPaymentBookingId.value !== bookingId) {
+          setPaymentMessage(bookingId, '')
+          setPaymentError(bookingId, 'Payment cancelled. Your booking is still pending.')
+        }
+      }
+    })
+
+    modal?.open?.()
+  } catch (e) {
+    setPaymentError(bookingId, e?.message || 'Unable to open card checkout. Please try again.')
+  } finally {
+    activePaymentBookingId.value = ''
+  }
 }
 
 onMounted(fetchBookings)
@@ -244,17 +370,35 @@ onMounted(fetchBookings)
 
               <button
                 v-if="b.status === 'Pending'"
-                @click="goToCheckout(b.bookingId)"
-                class="inline-flex items-center justify-center gap-1.5 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2"
+                :disabled="isAnyPaymentBusy()"
+                @click="handleCardPayment(b)"
+                class="inline-flex items-center justify-center gap-1.5 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <svg
+                  v-if="isPaymentBusy(b.bookingId)"
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-4 w-4 animate-spin"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                </svg>
+                <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                   <rect x="2" y="6" width="20" height="12" rx="2" />
                   <path stroke-linecap="round" stroke-linejoin="round" d="M2 10h20" />
                 </svg>
-                Pay Now
+                {{ getPaymentButtonLabel(b.bookingId) }}
               </button>
             </div>
           </div>
+
+          <p v-if="paymentMessages[b.bookingId]" class="mt-4 text-sm font-medium text-emerald-700">
+            {{ paymentMessages[b.bookingId] }}
+          </p>
+          <p v-if="paymentErrors[b.bookingId]" class="mt-4 text-sm font-medium text-red-600">
+            {{ paymentErrors[b.bookingId] }}
+          </p>
         </li>
       </ul>
     </div>

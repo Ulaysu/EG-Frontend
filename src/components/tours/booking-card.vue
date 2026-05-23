@@ -1,9 +1,14 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Minus, Plus, Users } from 'lucide-vue-next'
+import { CreditCard, Loader2, Minus, Plus, Users } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/authStore'
-import { createBooking } from '@/services/bookingService'
+import { createBooking, getMyBookings } from '@/services/bookingService'
+import {
+  ensureModemPayAssets,
+  prepareModemPayInlineCheckout,
+  verifyModemPayPayment
+} from '@/services/paymentService'
 
 const props = defineProps({
   tourId: [String, Number],
@@ -22,8 +27,13 @@ const authStore = useAuthStore()
 
 const peopleCount = ref(1)
 const isSubmitting = ref(false)
+const isPreparingPayment = ref(false)
+const isVerifyingPayment = ref(false)
+const createdBooking = ref(null)
 const errorMessage = ref('')
 const successMessage = ref('')
+const paymentMessage = ref('')
+const paymentErrorMessage = ref('')
 
 const availableSpots = computed(() => Math.max(Number(props.participants) || 0, 0))
 const pricePerPerson = computed(() => Number(props.price) || 0)
@@ -36,8 +46,39 @@ const ctaLabel = computed(() => {
   if (!canBook.value) return 'Sold Out'
   if (!authStore.isAuthenticated) return 'Sign in to book'
   if (isSubmitting.value) return 'Booking...'
-  if (successMessage.value) return 'Booked'
+  if (createdBooking.value) return 'Booking Created'
   return 'Book Now'
+})
+
+const paymentButtonLabel = computed(() => {
+  if (isVerifyingPayment.value) return 'Verifying...'
+  if (isPreparingPayment.value) return 'Opening checkout...'
+  return 'Pay with Card'
+})
+
+const canPay = computed(() => {
+  return Boolean(createdBooking.value?.bookingId)
+    && createdBooking.value?.status !== 'Confirmed'
+    && !isPreparingPayment.value
+    && !isVerifyingPayment.value
+})
+
+const getUserField = (...keys) => {
+  const user = authStore.user || {}
+  return keys.map((key) => user[key]).find(Boolean) || ''
+}
+
+const customerDetails = computed(() => {
+  const firstName = getUserField('firstName', 'givenName')
+  const lastName = getUserField('lastName', 'surname', 'familyName')
+  const fallbackName = getUserField('fullName', 'name', 'displayName', 'userName')
+  const customerName = fallbackName || [firstName, lastName].filter(Boolean).join(' ')
+
+  return {
+    customerName,
+    customerEmail: getUserField('email', 'emailAddress'),
+    customerPhone: getUserField('phone', 'phoneNumber', 'mobile', 'mobileNumber')
+  }
 })
 
 watch(availableSpots, (spots) => {
@@ -48,7 +89,8 @@ watch(availableSpots, (spots) => {
 
 function clearFeedback() {
   errorMessage.value = ''
-  successMessage.value = ''
+  if (!createdBooking.value) successMessage.value = ''
+  paymentErrorMessage.value = ''
 }
 
 function decreasePeople() {
@@ -77,12 +119,102 @@ async function handleBooking() {
 
   try {
     isSubmitting.value = true
-    await createBooking(props.tourId, peopleCount.value)
-    successMessage.value = 'Your booking is confirmed.'
+    createdBooking.value = await createBooking(props.tourId, peopleCount.value)
+    successMessage.value = 'Your booking is pending. Complete card payment to confirm it.'
   } catch (error) {
     errorMessage.value = error?.message || 'Unable to create booking. Please try again.'
   } finally {
     isSubmitting.value = false
+  }
+}
+
+async function refreshCreatedBooking() {
+  if (!createdBooking.value?.bookingId) return
+
+  const bookings = await getMyBookings()
+  const refreshedBooking = Array.isArray(bookings)
+    ? bookings.find((booking) => booking.bookingId === createdBooking.value.bookingId)
+    : null
+
+  if (refreshedBooking) {
+    createdBooking.value = refreshedBooking
+  }
+}
+
+async function handleCardPayment() {
+  if (!canPay.value) return
+
+  paymentErrorMessage.value = ''
+  paymentMessage.value = ''
+
+  let modal = null
+
+  try {
+    isPreparingPayment.value = true
+    await ensureModemPayAssets()
+
+    if (!window.ModemPayCheckout) {
+      throw new Error('Modem Pay checkout is not available.')
+    }
+
+    const checkout = await prepareModemPayInlineCheckout(
+      createdBooking.value.bookingId,
+      customerDetails.value
+    )
+
+    modal = window.ModemPayCheckout({
+      amount: checkout.amount,
+      currency: checkout.currency,
+      public_key: checkout.publicKey,
+      payment_methods: checkout.paymentMethods,
+      title: checkout.title,
+      description: checkout.description,
+      customer: checkout.customer,
+      customer_email: checkout.customerEmail,
+      customer_name: checkout.customerName,
+      customer_phone: checkout.customerPhone,
+      metadata: checkout.metadata,
+
+      callback: async function (transaction) {
+        const transactionId = transaction?.id || transaction?.transactionId
+
+        if (!transactionId) {
+          paymentErrorMessage.value = 'Payment returned without a transaction reference. Please try again.'
+          return
+        }
+
+        try {
+          isVerifyingPayment.value = true
+          paymentMessage.value = 'Verifying your payment...'
+          paymentErrorMessage.value = ''
+
+          await verifyModemPayPayment(transactionId)
+          await refreshCreatedBooking()
+
+          modal?.close?.()
+          paymentMessage.value = 'Payment verified. Your booking is confirmed.'
+          successMessage.value = 'Your booking is confirmed.'
+        } catch (error) {
+          paymentMessage.value = ''
+          paymentErrorMessage.value = error?.message || 'Payment verification failed. Please try again.'
+        } finally {
+          isVerifyingPayment.value = false
+        }
+      },
+
+      onClose: function (cancelled) {
+        if (cancelled && !isVerifyingPayment.value) {
+          paymentMessage.value = ''
+          paymentErrorMessage.value = 'Payment cancelled. Your booking is still pending.'
+        }
+      }
+    })
+
+    modal?.open?.()
+  } catch (error) {
+    paymentErrorMessage.value = error?.message || 'Unable to open card checkout. Please try again.'
+  } finally {
+    isPreparingPayment.value = false
   }
 }
 </script>
@@ -164,10 +296,10 @@ async function handleBooking() {
 
       <button
         type="button"
-        :disabled="!canBook || isSubmitting || Boolean(successMessage)"
+        :disabled="!canBook || isSubmitting || Boolean(createdBooking)"
         :class="[
           'w-full rounded-xl px-6 py-4 text-lg font-semibold text-white shadow-md transition-all duration-300',
-          canBook && !isSubmitting && !successMessage
+          canBook && !isSubmitting && !createdBooking
             ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 hover:shadow-lg active:scale-[0.98] hover:scale-[1.02]'
             : 'cursor-not-allowed bg-gradient-to-r from-amber-500 to-orange-500 opacity-50'
         ]"
@@ -176,15 +308,35 @@ async function handleBooking() {
         {{ ctaLabel }}
       </button>
 
+      <button
+        v-if="createdBooking?.status !== 'Confirmed' && createdBooking?.bookingId"
+        type="button"
+        :disabled="!canPay"
+        class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-amber-500 bg-white px-6 py-3.5 text-base font-semibold text-amber-700 shadow-sm transition hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-60"
+        @click="handleCardPayment"
+      >
+        <Loader2 v-if="isPreparingPayment || isVerifyingPayment" class="h-5 w-5 animate-spin" />
+        <CreditCard v-else class="h-5 w-5" />
+        {{ paymentButtonLabel }}
+      </button>
+
       <p v-if="successMessage" class="text-center text-sm font-medium text-emerald-700">
         {{ successMessage }}
       </p>
 
-      <p v-else-if="errorMessage" class="text-center text-sm font-medium text-red-600">
+      <p v-if="paymentMessage" class="text-center text-sm font-medium text-emerald-700">
+        {{ paymentMessage }}
+      </p>
+
+      <p v-if="errorMessage" class="text-center text-sm font-medium text-red-600">
         {{ errorMessage }}
       </p>
 
-      <p v-else class="text-center text-sm text-muted-foreground">
+      <p v-if="paymentErrorMessage" class="text-center text-sm font-medium text-red-600">
+        {{ paymentErrorMessage }}
+      </p>
+
+      <p v-if="!successMessage && !errorMessage && !paymentMessage && !paymentErrorMessage" class="text-center text-sm text-muted-foreground">
         Free cancellation up to 24 hours before
       </p>
     </div>

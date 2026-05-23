@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import { getToken, getRefreshToken, removeRefreshToken, removeToken } from '@/services/tokenService';
+import { getToken, getRefreshToken, isTokenValid, removeRefreshToken, removeToken } from '@/services/tokenService';
 
 const guestOnlyRouteNames = new Set(['login', 'signup']);
 

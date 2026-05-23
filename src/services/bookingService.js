@@ -1,7 +1,7 @@
 import { Request } from './httpClient'
 
 export const createBooking = async (tourId, numberOfPeople) => {
-  return Request('/bookings', {
+  return Request('/api/v1/bookings', {
     method: 'POST',
     body: {
       tourId,
@@ -11,7 +11,7 @@ export const createBooking = async (tourId, numberOfPeople) => {
 }
 
 export const getMyBookings = async () => {
-  return Request('/bookings/my-bookings')
+  return Request('/api/v1/bookings/my-bookings')
 }
 
 export default {
