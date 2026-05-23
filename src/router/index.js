@@ -4,6 +4,10 @@ import { getToken, getRefreshToken, isTokenValid, removeRefreshToken, removeToke
 const guestOnlyRouteNames = new Set(['login', 'signup']);
 
 const routes = [
+{
+    path: "/",
+    redirect: "/home"
+  },
   { path: "/home", 
     name: "home",
     component: () => import("../components/Home.vue") 
