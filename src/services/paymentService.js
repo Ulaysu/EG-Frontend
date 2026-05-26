@@ -29,6 +29,19 @@ export const verifyModemPayPayment = async (transactionId) => {
   })
 }
 
+export const createPaymentIntent = async (bookingId) => {
+  return Request(
+    `/payments/bookings/${bookingId}/modempay/intent`,
+    {
+      method: 'POST',
+      body: {
+        returnUrl: 'http://localhost:5173/payment-success',
+        cancelUrl: 'http://localhost:5173/payment-cancel'
+      }
+    }
+  )
+}
+
 export const ensureModemPayAssets = () => {
   if (typeof window === 'undefined') return Promise.resolve()
 
@@ -65,5 +78,6 @@ export const ensureModemPayAssets = () => {
 export default {
   prepareModemPayInlineCheckout,
   verifyModemPayPayment,
+  createPaymentIntent,
   ensureModemPayAssets
 }

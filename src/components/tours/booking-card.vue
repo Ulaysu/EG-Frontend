@@ -5,9 +5,8 @@ import { CreditCard, Loader2, Minus, Plus, Users } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/authStore'
 import { createBooking, getMyBookings } from '@/services/bookingService'
 import {
-  ensureModemPayAssets,
-  prepareModemPayInlineCheckout,
-  verifyModemPayPayment
+  createModemPayPaymentIntent
+
 } from '@/services/paymentService'
 
 const props = defineProps({
@@ -28,11 +27,11 @@ const authStore = useAuthStore()
 const peopleCount = ref(1)
 const isSubmitting = ref(false)
 const isPreparingPayment = ref(false)
-const isVerifyingPayment = ref(false)
+
 const createdBooking = ref(null)
 const errorMessage = ref('')
 const successMessage = ref('')
-const paymentMessage = ref('')
+
 const paymentErrorMessage = ref('')
 
 const availableSpots = computed(() => Math.max(Number(props.participants) || 0, 0))
@@ -51,7 +50,6 @@ const ctaLabel = computed(() => {
 })
 
 const paymentButtonLabel = computed(() => {
-  if (isVerifyingPayment.value) return 'Verifying...'
   if (isPreparingPayment.value) return 'Opening checkout...'
   return 'Pay with Card'
 })
@@ -60,7 +58,6 @@ const canPay = computed(() => {
   return Boolean(createdBooking.value?.bookingId)
     && createdBooking.value?.status !== 'Confirmed'
     && !isPreparingPayment.value
-    && !isVerifyingPayment.value
 })
 
 const getUserField = (...keys) => {
@@ -147,72 +144,26 @@ async function handleCardPayment() {
   paymentErrorMessage.value = ''
   paymentMessage.value = ''
 
-  let modal = null
-
   try {
     isPreparingPayment.value = true
-    await ensureModemPayAssets()
 
-    if (!window.ModemPayCheckout) {
-      throw new Error('Modem Pay checkout is not available.')
-    }
-
-    const checkout = await prepareModemPayInlineCheckout(
+    const checkout = await createModemPayPaymentIntent(
       createdBooking.value.bookingId,
-      customerDetails.value
+      {
+        returnUrl: `${window.location.origin}/bookings?payment=success`,
+        cancelUrl: `${window.location.origin}/bookings?payment=cancelled`
+      }
     )
 
-    modal = window.ModemPayCheckout({
-      amount: checkout.amount,
-      currency: checkout.currency,
-      public_key: checkout.publicKey,
-      payment_methods: checkout.paymentMethods,
-      title: checkout.title,
-      description: checkout.description,
-      customer: checkout.customer,
-      customer_email: checkout.customerEmail,
-      customer_name: checkout.customerName,
-      customer_phone: checkout.customerPhone,
-      metadata: checkout.metadata,
+    if (!checkout?.checkoutUrl) {
+      throw new Error('Modem Pay checkout URL was not returned.')
+    }
 
-      callback: async function (transaction) {
-        const transactionId = transaction?.id || transaction?.transactionId
-
-        if (!transactionId) {
-          paymentErrorMessage.value = 'Payment returned without a transaction reference. Please try again.'
-          return
-        }
-
-        try {
-          isVerifyingPayment.value = true
-          paymentMessage.value = 'Verifying your payment...'
-          paymentErrorMessage.value = ''
-
-          await verifyModemPayPayment(transactionId)
-          await refreshCreatedBooking()
-
-          modal?.close?.()
-          paymentMessage.value = 'Payment verified. Your booking is confirmed.'
-          successMessage.value = 'Your booking is confirmed.'
-        } catch (error) {
-          paymentMessage.value = ''
-          paymentErrorMessage.value = error?.message || 'Payment verification failed. Please try again.'
-        } finally {
-          isVerifyingPayment.value = false
-        }
-      },
-
-      onClose: function (cancelled) {
-        if (cancelled && !isVerifyingPayment.value) {
-          paymentMessage.value = ''
-          paymentErrorMessage.value = 'Payment cancelled. Your booking is still pending.'
-        }
-      }
-    })
-
-    modal?.open?.()
+    window.location.href = checkout.checkoutUrl
   } catch (error) {
-    paymentErrorMessage.value = error?.message || 'Unable to open card checkout. Please try again.'
+    paymentErrorMessage.value =
+      error?.message ||
+      'Unable to initialize payment. Please try again.'
   } finally {
     isPreparingPayment.value = false
   }
@@ -324,9 +275,7 @@ async function handleCardPayment() {
         {{ successMessage }}
       </p>
 
-      <p v-if="paymentMessage" class="text-center text-sm font-medium text-emerald-700">
-        {{ paymentMessage }}
-      </p>
+      
 
       <p v-if="errorMessage" class="text-center text-sm font-medium text-red-600">
         {{ errorMessage }}

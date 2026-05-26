@@ -4,9 +4,8 @@ import { useRouter } from 'vue-router'
 import { getMyBookings } from '@/services/bookingService'
 import { useAuthStore } from '@/stores/authStore'
 import {
-  ensureModemPayAssets,
-  prepareModemPayInlineCheckout,
-  verifyModemPayPayment
+  createModemPayPaymentIntent
+
 } from '@/services/paymentService'
 
 const router = useRouter()
@@ -16,8 +15,8 @@ const bookings = ref([])
 const loading = ref(true)
 const error = ref('')
 const activePaymentBookingId = ref('')
-const verifyingPaymentBookingId = ref('')
-const paymentMessages = ref({})
+
+
 const paymentErrors = ref({})
 
 const formatDate = (value) => {
@@ -79,37 +78,35 @@ const customerDetails = computed(() => {
   }
 })
 
-const setPaymentMessage = (bookingId, message) => {
-  paymentMessages.value = { ...paymentMessages.value, [bookingId]: message }
-}
+
 
 const setPaymentError = (bookingId, message) => {
   paymentErrors.value = { ...paymentErrors.value, [bookingId]: message }
 }
 
 const clearPaymentFeedback = (bookingId) => {
-  setPaymentMessage(bookingId, '')
   setPaymentError(bookingId, '')
 }
 
 const getPaymentButtonLabel = (bookingId) => {
-  if (verifyingPaymentBookingId.value === bookingId) return 'Verifying...'
-  if (activePaymentBookingId.value === bookingId) return 'Opening checkout...'
+ 
+  if (activePaymentBookingId.value === bookingId) 
+  {return 'Opening checkout...'}
   return 'Pay with Card'
 }
 
 const isPaymentBusy = (bookingId) => {
-  return activePaymentBookingId.value === bookingId || verifyingPaymentBookingId.value === bookingId
+ return activePaymentBookingId.value === bookingId
 }
 
-const isAnyPaymentBusy = () => Boolean(activePaymentBookingId.value || verifyingPaymentBookingId.value)
+const isAnyPaymentBusy = () => Boolean(activePaymentBookingId.value)
 
 const fetchBookings = async () => {
   loading.value = true
   error.value = ''
   
   try {
-    const res = await getMyBookings() // ✅ token is attached automatically
+    const res = await getMyBookings() // token is attached automatically
     bookings.value = Array.isArray(res) ? res : []
   } catch (e) {
     console.error(e)
@@ -122,72 +119,34 @@ const fetchBookings = async () => {
 
 const handleCardPayment = async (booking) => {
   const bookingId = booking?.bookingId
-  if (!bookingId || booking.status !== 'Pending' || isAnyPaymentBusy()) return
+
+  if (!bookingId || booking.status !== 'Pending' || isAnyPaymentBusy()) {
+    return
+  }
 
   clearPaymentFeedback(bookingId)
 
-  let modal = null
-
   try {
     activePaymentBookingId.value = bookingId
-    await ensureModemPayAssets()
 
-    if (!window.ModemPayCheckout) {
-      throw new Error('Modem Pay checkout is not available.')
+    const checkout = await createModemPayPaymentIntent(
+      bookingId,
+      {
+        returnUrl: `${window.location.origin}/bookings?payment=success`,
+        cancelUrl: `${window.location.origin}/bookings?payment=cancelled`
+      }
+    )
+
+    if (!checkout?.checkoutUrl) {
+      throw new Error('Modem Pay checkout URL was not returned.')
     }
 
-    const checkout = await prepareModemPayInlineCheckout(bookingId, customerDetails.value)
-
-    modal = window.ModemPayCheckout({
-      amount: checkout.amount,
-      currency: checkout.currency,
-      public_key: checkout.publicKey,
-      payment_methods: checkout.paymentMethods,
-      title: checkout.title,
-      description: checkout.description,
-      customer: checkout.customer,
-      customer_email: checkout.customerEmail,
-      customer_name: checkout.customerName,
-      customer_phone: checkout.customerPhone,
-      metadata: checkout.metadata,
-
-      callback: async function (transaction) {
-        const transactionId = transaction?.id || transaction?.transactionId
-
-        if (!transactionId) {
-          setPaymentError(bookingId, 'Payment returned without a transaction reference. Please try again.')
-          return
-        }
-
-        try {
-          verifyingPaymentBookingId.value = bookingId
-          setPaymentMessage(bookingId, 'Verifying your payment...')
-          setPaymentError(bookingId, '')
-
-          await verifyModemPayPayment(transactionId)
-          await fetchBookings()
-
-          modal?.close?.()
-          setPaymentMessage(bookingId, 'Payment verified. Your booking is confirmed.')
-        } catch (e) {
-          setPaymentMessage(bookingId, '')
-          setPaymentError(bookingId, e?.message || 'Payment verification failed. Please try again.')
-        } finally {
-          verifyingPaymentBookingId.value = ''
-        }
-      },
-
-      onClose: function (cancelled) {
-        if (cancelled && verifyingPaymentBookingId.value !== bookingId) {
-          setPaymentMessage(bookingId, '')
-          setPaymentError(bookingId, 'Payment cancelled. Your booking is still pending.')
-        }
-      }
-    })
-
-    modal?.open?.()
+    window.location.href = checkout.checkoutUrl
   } catch (e) {
-    setPaymentError(bookingId, e?.message || 'Unable to open card checkout. Please try again.')
+    setPaymentError(
+      bookingId,
+      e?.message || 'Unable to initialize payment.'
+    )
   } finally {
     activePaymentBookingId.value = ''
   }
@@ -393,9 +352,7 @@ onMounted(fetchBookings)
             </div>
           </div>
 
-          <p v-if="paymentMessages[b.bookingId]" class="mt-4 text-sm font-medium text-emerald-700">
-            {{ paymentMessages[b.bookingId] }}
-          </p>
+          
           <p v-if="paymentErrors[b.bookingId]" class="mt-4 text-sm font-medium text-red-600">
             {{ paymentErrors[b.bookingId] }}
           </p>
