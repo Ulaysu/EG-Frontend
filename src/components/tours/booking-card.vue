@@ -4,10 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { CreditCard, Loader2, Minus, Plus, Users } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/authStore'
 import { createBooking, getMyBookings } from '@/services/bookingService'
-import {
-  createModemPayPaymentIntent
-
-} from '@/services/paymentService'
+import { createStripeCheckoutSession } from '@/services/paymentService'
 
 const props = defineProps({
   tourId: [String, Number],
@@ -142,21 +139,14 @@ async function handleCardPayment() {
   if (!canPay.value) return
 
   paymentErrorMessage.value = ''
-  paymentMessage.value = ''
 
   try {
     isPreparingPayment.value = true
 
-    const checkout = await createModemPayPaymentIntent(
-      createdBooking.value.bookingId,
-      {
-        returnUrl: `${window.location.origin}/bookings?payment=success`,
-        cancelUrl: `${window.location.origin}/bookings?payment=cancelled`
-      }
-    )
+    const checkout = await createStripeCheckoutSession(createdBooking.value.bookingId)
 
     if (!checkout?.checkoutUrl) {
-      throw new Error('Modem Pay checkout URL was not returned.')
+      throw new Error('Stripe checkout URL was not returned.')
     }
 
     window.location.href = checkout.checkoutUrl
@@ -266,7 +256,7 @@ async function handleCardPayment() {
         class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-amber-500 bg-white px-6 py-3.5 text-base font-semibold text-amber-700 shadow-sm transition hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-60"
         @click="handleCardPayment"
       >
-        <Loader2 v-if="isPreparingPayment || isVerifyingPayment" class="h-5 w-5 animate-spin" />
+        <Loader2 v-if="isPreparingPayment" class="h-5 w-5 animate-spin" />
         <CreditCard v-else class="h-5 w-5" />
         {{ paymentButtonLabel }}
       </button>
@@ -285,7 +275,7 @@ async function handleCardPayment() {
         {{ paymentErrorMessage }}
       </p>
 
-      <p v-if="!successMessage && !errorMessage && !paymentMessage && !paymentErrorMessage" class="text-center text-sm text-muted-foreground">
+      <p v-if="!successMessage && !errorMessage && !paymentErrorMessage" class="text-center text-sm text-muted-foreground">
         Free cancellation up to 24 hours before
       </p>
     </div>

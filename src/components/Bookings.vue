@@ -3,10 +3,7 @@ import { computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getMyBookings } from '@/services/bookingService'
 import { useAuthStore } from '@/stores/authStore'
-import {
-  createModemPayPaymentIntent
-
-} from '@/services/paymentService'
+import { createStripeCheckoutSession } from '@/services/paymentService'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -129,19 +126,14 @@ const handleCardPayment = async (booking) => {
   try {
     activePaymentBookingId.value = bookingId
 
-    const checkout = await createModemPayPaymentIntent(
-      bookingId,
-      {
-        returnUrl: `${window.location.origin}/bookings?payment=success`,
-        cancelUrl: `${window.location.origin}/bookings?payment=cancelled`
-      }
-    )
+    const checkout = await createStripeCheckoutSession(bookingId)
+    const checkoutUrl = checkout?.checkoutUrl
 
-    if (!checkout?.checkoutUrl) {
-      throw new Error('Modem Pay checkout URL was not returned.')
+    if (!checkoutUrl) {
+      throw new Error('Stripe checkout URL was not returned.')
     }
 
-    window.location.href = checkout.checkoutUrl
+    window.location.href = checkoutUrl
   } catch (e) {
     setPaymentError(
       bookingId,

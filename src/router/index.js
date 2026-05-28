@@ -50,6 +50,16 @@ const routes = [
     component: () => import("../components/Bookings.vue"),
     meta: { requiresAuth: true }
 },
+{
+    path: "/payment-success",
+    name: "payment-success",
+    component: () => import("../components/PaymentSuccess.vue")
+},
+{
+    path: "/payment-cancel",
+    name: "payment-cancel",
+    component: () => import("../components/PaymentCancel.vue")
+},
 
  // Catch-all route for 404 Not Found
   {
