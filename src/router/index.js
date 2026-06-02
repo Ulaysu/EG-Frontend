@@ -51,14 +51,24 @@ const routes = [
     meta: { requiresAuth: true }
 },
 {
-    path: "/payment-success",
+    path: "/payment/success",
     name: "payment-success",
-    component: () => import("../components/PaymentSuccess.vue")
+    component: () => import("../components/PaymentSuccess.vue"),
+    meta: { requiresAuth: true }
+},
+{
+    path: "/payment/cancel",
+    name: "payment-cancel",
+    component: () => import("../components/PaymentCancel.vue"),
+    meta: { requiresAuth: true }
+},
+{
+    path: "/payment-success",
+    redirect: (to) => ({ path: "/payment/success", query: to.query })
 },
 {
     path: "/payment-cancel",
-    name: "payment-cancel",
-    component: () => import("../components/PaymentCancel.vue")
+    redirect: (to) => ({ path: "/payment/cancel", query: to.query })
 },
 
  // Catch-all route for 404 Not Found
