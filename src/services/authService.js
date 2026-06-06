@@ -26,7 +26,7 @@ export const register = async (userData) => {
 }
 
 export const getMe = async () => {
-  return Request('/api/v1/auth/me')
+  return Request('/auth/me')
 }
 
 
@@ -59,6 +59,23 @@ export const refreshAccessToken = async () => {
   return data.accessToken
 }
 
+export const updateMe = async (data) => {
+  return Request('/auth/me', {
+    method: 'PUT',
+    body: data
+  })
+}
+
+export const getGuideProfile = async () => {
+  return Request('/tour-guides/me')
+}
+
+export const updateGuideProfile = async (data) => {
+  return Request('/tour-guides/me', {
+    method: 'PUT',
+    body: data
+  })
+}
 
 
 export {
