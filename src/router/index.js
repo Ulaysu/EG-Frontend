@@ -42,6 +42,15 @@ const routes = [
   }
 },
 {
+  path: '/guide/tours',
+  name: 'guide-tours',
+  component: () => import('../Pages/MyTours.vue'),
+    meta: {
+        requiresAuth: true,
+        roles: ['guide'] 
+    }
+},
+{
     path: "/profile",
     name: "profile",
     component: () => import("../components/Profile.vue"),
