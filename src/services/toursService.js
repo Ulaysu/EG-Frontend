@@ -51,3 +51,30 @@ export async function getTourById(id) {
 
   return normalizeTour(payload)
 }
+
+export async function createTour(data) {
+  if (!data) {
+    throw createAppError('Tour data is required.', {
+      code: 'INVALID_INPUT'
+    })
+  }
+
+  console.log("createTour payload:", data)
+
+  const payload = await Request('/tours', {
+    method: 'POST',
+    body: data
+  })
+
+    console.log("createTour response:", payload)
+
+
+  if (!payload || typeof payload !== 'object') {
+    throw createAppError('Unexpected create tour response.', {
+      code: 'INVALID_RESPONSE',
+      cause: payload
+    })
+  }
+
+  return normalizeTour(payload)
+}

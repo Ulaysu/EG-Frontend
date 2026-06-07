@@ -33,6 +33,15 @@ const routes = [
     component: () => import("../Pages/TourDetails.vue")
 },
 {
+  path: '/tours/create',
+  name: 'create-tour',
+  component: () => import('../Pages/CreateTour.vue'),
+  meta: {
+    requiresAuth: true,
+    roles: ['guide'] 
+  }
+},
+{
     path: "/profile",
     name: "profile",
     component: () => import("../components/Profile.vue"),
