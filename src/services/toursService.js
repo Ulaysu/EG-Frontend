@@ -15,6 +15,30 @@ function normalizeTour(rawTour) {
   }
 }
 
+export async function getMyTours() {
+  const payload = await Request('/tours/my')
+
+  if (!Array.isArray(payload)) {
+    throw createAppError('Unexpected tours response format.', {
+      code: 'INVALID_RESPONSE',
+      cause: payload
+    })
+  }
+
+  return payload.map(tour => ({
+    id: tour.tourId,
+    title: tour.title,
+    description: tour.description,
+    location: tour.location,
+    price: tour.price,
+    maxParticipants: tour.maxParticipants,
+    startDate: tour.startDate,
+    endDate: tour.endDate,
+    imageUrl: tour.imageUrl,
+    isAvailable: tour.isAvailable,
+  }))
+}
+
 export async function getTours(pageNumber = 1, pageSize = 10) {
   // Added Pagination parameters to the request URL
   const payload = await Request(`/tours?pageNumber=${pageNumber}&pageSize=${pageSize}`)
@@ -59,14 +83,14 @@ export async function createTour(data) {
     })
   }
 
-  console.log("createTour payload:", data)
+ 
 
   const payload = await Request('/tours', {
     method: 'POST',
     body: data
   })
 
-    console.log("createTour response:", payload)
+    
 
 
   if (!payload || typeof payload !== 'object') {
