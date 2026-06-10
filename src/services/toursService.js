@@ -54,6 +54,25 @@ export async function getTours(pageNumber = 1, pageSize = 10) {
   return payload.map(normalizeTour)
 }
 
+export async function getMyTourById(id) {
+  if (!id) {
+    throw createAppError('Tour id is required.', {
+      code: 'INVALID_INPUT'
+    })
+  }
+
+  const payload = await Request(`/tours/my/${id}`)
+
+  if (!payload || typeof payload !== 'object') {
+    throw createAppError('Unexpected guide tour response format.', {
+      code: 'INVALID_RESPONSE',
+      cause: payload
+    })
+  }
+
+  return normalizeTour(payload)
+}
+
 
 export async function getTourById(id) {
   if (!id) {

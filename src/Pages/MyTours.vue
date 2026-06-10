@@ -8,7 +8,7 @@ const router = useRouter()
 const tours = ref([])
 const loading = ref(false)
 const error = ref(null)
-
+  
 const filter = ref('all')
 const sortBy = ref('startDate')
 
@@ -96,9 +96,9 @@ function createTour() {
 }
 
 function viewTour(tour) {
-     console.log(tour)
-  console.log(tour.tourId)
-  router.push(`/tours/${tour.id}`)
+    console.log('Viewing tour', tour)
+
+  router.push(`/tours/guidedetails/${tour.id}`)
 }
 
 function editTour(tour) {
