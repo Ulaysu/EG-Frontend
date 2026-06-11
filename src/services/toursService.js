@@ -11,7 +11,7 @@ function normalizeTour(rawTour) {
      isAvailable: Boolean(rawTour?.isAvailable),
     startDate: rawTour?.startDate || null,
     endDate: rawTour?.endDate || null,
-    participants: Number(rawTour?.participants ?? rawTour?.spotsRemaining ?? 0)
+    maxParticipants: Number(rawTour?.maxParticipants ?? 0),
   }
 }
 
@@ -68,11 +68,38 @@ export async function getMyTourById(id) {
       code: 'INVALID_RESPONSE',
       cause: payload
     })
-  }
+  } 
 
   return normalizeTour(payload)
 }
 
+export async function updateTour(id, data) {
+  if (!id) {
+    throw createAppError('Tour id is required.', {
+      code: 'INVALID_INPUT'
+    })
+  }
+
+  if (!data) {
+    throw createAppError('Tour data is required.', {
+      code: 'INVALID_INPUT'
+    })
+  }
+
+  const payload = await Request(`/tours/${id}`, {
+    method: 'PUT',
+    body: data
+  })
+
+  if (!payload || typeof payload !== 'object') {
+    throw createAppError('Unexpected update tour response.', {
+      code: 'INVALID_RESPONSE',
+      cause: payload
+    })
+  }
+
+  return normalizeTour(payload)
+}
 
 export async function getTourById(id) {
   if (!id) {

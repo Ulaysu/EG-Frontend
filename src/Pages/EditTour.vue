@@ -1,699 +1,705 @@
+
+
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, computed, reactive, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import {
+  getMyTourById,
+  updateTour
+} from '@/services/toursService'
+import { uploadImage } from '@/services/mediaService'
 
-const props = defineProps({
-  tourId: { type: [String, Number], default: 'demo-123' },
-  initialTour: { type: Object, default: null },
-})
+const emit = defineEmits(['updated', 'cancel'])
 
-const emit = defineEmits(['updated', 'deleted', 'cancel'])
+const route = useRoute()
 
-// Mock initial data — replace by passing :initialTour or fetching by tourId
-const MOCK_TOUR = {
-  title: 'Sunset River Cruise on the Gambia River',
-  location: 'Banjul, The Gambia',
-  price: '2500',
-  maxParticipants: '12',
-  shortDescription:
-    'Glide down the Gambia River at golden hour and watch the sun melt into the mangroves.',
-  fullDescription:
-    "Join us for an unforgettable evening cruise along the legendary Gambia River. We'll cast off from Banjul harbor as the afternoon heat fades, drifting past mangroves where kingfishers dart and monkeys chatter overhead. Local snacks and a welcome drink are included. The journey lasts roughly 2.5 hours and finishes back at the harbor under a sky full of stars.",
-  category: 'Beach & Water',
-  startDate: '2026-07-01',
-  endDate: '2026-09-30',
-  imageUrl:
-    'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80',
-}
-
-const categories = [
-  'Nature & Wildlife',
-  'Cultural & Historical',
-  'Beach & Water',
-  'Food & Drink',
-  'Adventure',
-  'City Tour',
-]
-
+// ---------- Form State ----------
 const form = reactive({
   title: '',
+  description: '',
   location: '',
   price: '',
   maxParticipants: '',
-  shortDescription: '',
-  fullDescription: '',
-  category: '',
   startDate: '',
   endDate: '',
 })
 
-const errors = reactive({})
-const imagePreview = ref(null)
+const submitError = ref('')
+const imageUrl = ref('')
+const imageFile = ref(null)
+const imagePreview = ref('')
 const isDragging = ref(false)
 const isSubmitting = ref(false)
-const isDeleting = ref(false)
-const isLoading = ref(true)
-const toast = ref(null)
+const showSuccess = ref(false)
+const errors = reactive({})
 const fileInput = ref(null)
 
-onMounted(() => {
-  const data = props.initialTour || MOCK_TOUR
-  setTimeout(() => {
-    Object.assign(form, {
-      title: data.title || '',
-      location: data.location || '',
-      price: String(data.price || ''),
-      maxParticipants: String(data.maxParticipants || ''),
-      shortDescription: data.shortDescription || '',
-      fullDescription: data.fullDescription || '',
-      category: data.category || '',
-      startDate: data.startDate || '',
-      endDate: data.endDate || '',
-    })
-    imagePreview.value = data.imageUrl || null
-    isLoading.value = false
-  }, 300)
-})
+// ---------- Load Existing Tour ----------
+async function loadTour() {
+  try {
+    isSubmitting.value = true
 
-function clearError(field) {
-  if (errors[field]) errors[field] = undefined
+    const tourId = route.params.id
+
+    const tour = await getMyTourById(tourId)
+
+    form.title = tour.title
+    form.description = tour.description
+    form.location = tour.location
+    form.price = tour.price
+    form.maxParticipants = tour.maxParticipants
+
+    form.startDate = tour.startDate
+      ? tour.startDate.split('T')[0]
+      : ''
+
+    form.endDate = tour.endDate
+      ? tour.endDate.split('T')[0]
+      : ''
+
+    imageUrl.value = tour.imageUrl
+    imagePreview.value = tour.imageUrl
+  }
+  catch (error) {
+    submitError.value =
+      error.message || 'Failed to load tour.'
+  }
+  finally {
+    isSubmitting.value = false
+  }
 }
 
-function validate() {
-  Object.keys(errors).forEach((k) => (errors[k] = undefined))
-  let ok = true
-  if (!form.title.trim()) (errors.title = 'Tour title is required'), (ok = false)
-  else if (form.title.length < 5) (errors.title = 'Title must be at least 5 characters'), (ok = false)
+onMounted(loadTour)
 
-  if (!form.location.trim()) (errors.location = 'Location is required'), (ok = false)
+// ---------- Image Handling ----------
+async function handleFiles(files) {
+  const file = files?.[0]
 
-  if (!form.price) (errors.price = 'Price is required'), (ok = false)
-  else if (Number(form.price) <= 0) (errors.price = 'Price must be greater than 0'), (ok = false)
+  if (!file) return
 
-  if (!form.maxParticipants)
-    (errors.maxParticipants = 'Maximum participants is required'), (ok = false)
-  else if (Number(form.maxParticipants) <= 0)
-    (errors.maxParticipants = 'Must allow at least 1 participant'), (ok = false)
-
-  if (!form.shortDescription.trim())
-    (errors.shortDescription = 'Short description is required'), (ok = false)
-  else if (form.shortDescription.length < 20)
-    (errors.shortDescription = 'Must be at least 20 characters'), (ok = false)
-
-  if (!form.fullDescription.trim())
-    (errors.fullDescription = 'Full description is required'), (ok = false)
-  else if (form.fullDescription.length < 50)
-    (errors.fullDescription = 'Must be at least 50 characters'), (ok = false)
-
-  if (!imagePreview.value) (errors.image = 'Please upload a tour image'), (ok = false)
-  return ok
-}
-
-function showToast(message, description = '', kind = 'success') {
-  toast.value = { message, description, kind }
-  setTimeout(() => (toast.value = null), 3500)
-}
-
-function handleImageSelect(file) {
   if (!file.type.startsWith('image/')) {
-    errors.image = 'Please upload an image file'
+    errors.image = 'Please upload a valid image file.'
     return
   }
+
   if (file.size > 8 * 1024 * 1024) {
-    errors.image = 'Image must be under 8MB'
+    errors.image = 'Image must be smaller than 8MB.'
     return
   }
+
+  delete errors.image
+
+  imageFile.value = file
+
   const reader = new FileReader()
+
   reader.onload = (e) => {
-    imagePreview.value = e.target?.result
-    errors.image = undefined
+    imagePreview.value = e.target.result
   }
+
   reader.readAsDataURL(file)
+
+  try {
+    isSubmitting.value = true
+
+    const uploadedUrl = await uploadImage(file)
+
+    imageUrl.value = uploadedUrl
+  }
+  catch {
+    errors.image =
+      'Image upload failed. Try again.'
+  }
+  finally {
+    isSubmitting.value = false
+  }
 }
 
-function onFileInput(e) {
-  const file = e.target.files?.[0]
-  if (file) handleImageSelect(file)
+function onFileChange(e) {
+  handleFiles(e.target.files)
 }
+
 function onDrop(e) {
-  e.preventDefault()
   isDragging.value = false
-  const file = e.dataTransfer.files?.[0]
-  if (file) handleImageSelect(file)
+  handleFiles(e.dataTransfer.files)
 }
+
 function onDragOver(e) {
   e.preventDefault()
   isDragging.value = true
 }
-function onDragLeave(e) {
-  e.preventDefault()
+
+function onDragLeave() {
   isDragging.value = false
 }
-function clearImage() {
-  imagePreview.value = null
-  if (fileInput.value) fileInput.value.value = ''
+
+function openFilePicker() {
+  fileInput.value?.click()
 }
 
-async function handleSubmit() {
+function changeImage() {
+  openFilePicker()
+}
+
+// ---------- Validation ----------
+function validate() {
+  Object.keys(errors).forEach(key => delete errors[key])
+
+  if (!form.title.trim()) {
+    errors.title = 'Tour title is required.'
+  }
+  else if (form.title.length < 4) {
+    errors.title =
+      'Title must be at least 4 characters.'
+  }
+
+  if (!form.description.trim()) {
+    errors.description = 'Description is required.'
+  }
+  else if (form.description.length < 20) {
+    errors.description =
+      'Please write at least 20 characters.'
+  }
+
+  if (!form.location.trim()) {
+    errors.location = 'Location is required.'
+  }
+
+  if (!form.price || Number(form.price) <= 0) {
+    errors.price = 'Enter a valid price.'
+  }
+
+  if (
+    !form.maxParticipants ||
+    Number(form.maxParticipants) < 1
+  ) {
+    errors.maxParticipants =
+      'At least 1 participant.'
+  }
+
+  if (!form.startDate) {
+    errors.startDate =
+      'Start date is required.'
+  }
+
+  if (!form.endDate) {
+    errors.endDate =
+      'End date is required.'
+  }
+
+  if (
+    form.startDate &&
+    form.endDate &&
+    form.endDate < form.startDate
+  ) {
+    errors.endDate =
+      'End date must be after start date.'
+  }
+
+  if (!imageUrl.value) {
+    errors.image =
+      'Please upload a cover image.'
+  }
+
+  return Object.keys(errors).length === 0
+}
+
+// ---------- Submit ----------
+async function onSubmit() {
   if (!validate()) return
+
   isSubmitting.value = true
-  await new Promise((r) => setTimeout(r, 1200))
-  isSubmitting.value = false
-  showToast('Changes saved', `"${form.title}" has been updated.`)
-  emit('updated', { id: props.tourId, ...form, imageUrl: imagePreview.value })
+  submitError.value = ''
+
+  try {
+    const payload = {
+      title: form.title,
+      description: form.description,
+      location: form.location,
+      price: Number(form.price),
+      maxParticipants: Number(
+        form.maxParticipants
+      ),
+      startDate: form.startDate,
+      endDate: form.endDate,
+      imageUrl: imageUrl.value
+    }
+
+    const result = await updateTour(
+      route.params.id,
+      payload
+    )
+
+    emit('updated', result)
+
+    showSuccess.value = true
+
+    setTimeout(() => {
+      showSuccess.value = false
+    }, 4000)
+  }
+  catch (error) {
+    submitError.value =
+      error.message || 'Failed to update tour.'
+  }
+  finally {
+    isSubmitting.value = false
+  }
 }
 
-async function handleDelete() {
-  if (!window.confirm('Delete this tour? This action cannot be undone.')) return
-  isDeleting.value = true
-  await new Promise((r) => setTimeout(r, 1000))
-  isDeleting.value = false
-  showToast('Tour deleted', 'The tour has been removed from your listings.')
-  emit('deleted', props.tourId)
-}
-
-function handleCancel() {
+function onCancel() {
   emit('cancel')
 }
 
-const dateRangeLabel = computed(() => {
-  if (form.startDate && form.endDate)
-    return `${new Date(form.startDate).toLocaleDateString()} - ${new Date(form.endDate).toLocaleDateString()}`
-  if (form.startDate) return `From ${new Date(form.startDate).toLocaleDateString()}`
-  if (form.endDate) return `Until ${new Date(form.endDate).toLocaleDateString()}`
-  return ''
-})
+// ---------- Preview Helpers ----------
+const previewPrice = computed(() =>
+  form.price
+    ? `$${Number(form.price).toLocaleString()}`
+    : '$0'
+)
 </script>
 
 <template>
   <div class="et-page">
-    <!-- Loading -->
-    <div v-if="isLoading" class="et-loading">
-      <div class="et-spinner" />
-      <span>Loading tour details...</span>
-    </div>
+    <!-- Success toast -->
+    <transition name="et-toast">
+      <div v-if="showSuccess" class="et-toast" role="status">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 6L9 17l-5-5" />
+        </svg>
+        <span>Tour Edited successfully!</span>
+      </div>
+    </transition>
 
-    <template v-else>
+    <div class="et-container">
       <!-- Header -->
       <header class="et-header">
-        <div class="et-header-inner">
-          <div class="et-brand">
-            <div class="et-logo">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>
-            </div>
-            <span class="et-brand-name">Explore Gambia</span>
-          </div>
-          <span class="et-header-meta">Edit experience</span>
-        </div>
+        <span class="et-eyebrow">Explore Gambia · Host</span>
+        <h1 class="et-title">Edit Tour</h1>
+        <p class="et-subtitle">Update your tour details at any time.</p>
       </header>
 
-      <main class="et-main">
-        <button type="button" class="et-back" @click="handleCancel">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
-          Back to tours
-        </button>
+      <form class="et-grid" @submit.prevent="onSubmit" novalidate>
+        <!-- LEFT COLUMN -->
+        <section class="et-card et-image-card">
+          <h2 class="et-card-title">Cover image</h2>
+          <p class="et-card-hint">A great photo is the first thing travelers will see.</p>
 
-        <div class="et-title-row">
-          <div>
-            <h1>Edit Tour</h1>
-            <p>Update the details of your experience. Changes appear live in the preview.</p>
-          </div>
-          <span class="et-id-pill">Tour ID: {{ tourId }}</span>
-        </div>
-
-        <div class="et-grid">
-          <!-- Form -->
-          <form class="et-form" @submit.prevent="handleSubmit">
-            <!-- Image -->
-            <section class="et-card">
-              <header class="et-card-header">
-                <h3>Tour Image</h3>
-                <p>Replace the current photo or keep the existing one</p>
-              </header>
-              <div class="et-card-body">
-                <div
-                  v-if="!imagePreview"
-                  class="et-dropzone"
-                  :class="{ 'is-dragging': isDragging }"
-                  @drop="onDrop"
-                  @dragover="onDragOver"
-                  @dragleave="onDragLeave"
-                  @click="fileInput?.click()"
-                >
-                  <svg class="et-dropzone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                  <p class="et-dropzone-title">Drag & drop an image here</p>
-                  <p class="et-dropzone-hint">or click to browse (JPG, PNG, max 8MB)</p>
-                  <input ref="fileInput" type="file" accept="image/*" @change="onFileInput" hidden />
+          <div
+            class="et-dropzone"
+            :class="{ 'is-dragging': isDragging, 'has-image': imagePreview, 'has-error': errors.image }"
+            @click="!imagePreview && openFilePicker()"
+            @dragover="onDragOver"
+            @dragleave="onDragLeave"
+            @drop.prevent="onDrop"
+          >
+            <template v-if="!imagePreview">
+              <div class="et-drop-inner">
+                <div class="et-drop-icon">
+                  <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <circle cx="9" cy="9" r="2" />
+                    <path d="M21 15l-5-5L5 21" />
+                  </svg>
                 </div>
-                <div v-else class="et-image-wrap">
-                  <img :src="imagePreview" alt="Tour preview" />
-                  <button type="button" class="et-image-btn et-image-btn--icon" @click="clearImage">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                  </button>
-                  <button type="button" class="et-image-btn et-image-btn--label" @click="fileInput?.click()">
-                    Change photo
-                  </button>
-                  <input ref="fileInput" type="file" accept="image/*" @change="onFileInput" hidden />
-                </div>
-                <p v-if="errors.image" class="et-error">{{ errors.image }}</p>
+                <p class="et-drop-title">Drag & drop your photo here</p>
+                <p class="et-drop-sub">or <span class="et-link">browse from your device</span></p>
+                <p class="et-drop-meta">JPG, PNG · up to 8MB</p>
               </div>
-            </section>
-
-            <!-- Basic Info -->
-            <section class="et-card">
-              <header class="et-card-header">
-                <h3>Basic Information</h3>
-              </header>
-              <div class="et-card-body et-stack">
-                <div class="et-field">
-                  <label for="title">Tour Title</label>
-                  <input
-                    id="title" type="text"
-                    placeholder="e.g., Sunset River Cruise on the Gambia River"
-                    v-model="form.title" @input="clearError('title')"
-                    :class="{ 'has-error': errors.title }"
-                  />
-                  <p v-if="errors.title" class="et-error">{{ errors.title }}</p>
-                </div>
-
-                <div class="et-field">
-                  <label for="location">Location</label>
-                  <input
-                    id="location" type="text"
-                    placeholder="e.g., Banjul, The Gambia"
-                    v-model="form.location" @input="clearError('location')"
-                    :class="{ 'has-error': errors.location }"
-                  />
-                  <p v-if="errors.location" class="et-error">{{ errors.location }}</p>
-                </div>
-
-                <div class="et-row">
-                  <div class="et-field">
-                    <label for="price">Price (GMD)</label>
-                    <input
-                      id="price" type="number" min="0" placeholder="2500"
-                      v-model="form.price" @input="clearError('price')"
-                      :class="{ 'has-error': errors.price }"
-                    />
-                    <p v-if="errors.price" class="et-error">{{ errors.price }}</p>
-                  </div>
-                  <div class="et-field">
-                    <label for="maxParticipants">Max Participants</label>
-                    <input
-                      id="maxParticipants" type="number" min="1" placeholder="10"
-                      v-model="form.maxParticipants" @input="clearError('maxParticipants')"
-                      :class="{ 'has-error': errors.maxParticipants }"
-                    />
-                    <p v-if="errors.maxParticipants" class="et-error">{{ errors.maxParticipants }}</p>
-                  </div>
-                </div>
-
-                <div class="et-field">
-                  <label for="category">Category</label>
-                  <select id="category" v-model="form.category">
-                    <option value="">Select a category</option>
-                    <option v-for="c in categories" :key="c" :value="c">{{ c }}</option>
-                  </select>
-                </div>
-              </div>
-            </section>
-
-            <!-- Dates -->
-            <section class="et-card">
-              <header class="et-card-header"><h3>Availability</h3></header>
-              <div class="et-card-body et-row">
-                <div class="et-field">
-                  <label for="startDate">Start Date</label>
-                  <input id="startDate" type="date" v-model="form.startDate" />
-                </div>
-                <div class="et-field">
-                  <label for="endDate">End Date</label>
-                  <input id="endDate" type="date" v-model="form.endDate" />
-                </div>
-              </div>
-            </section>
-
-            <!-- Description -->
-            <section class="et-card">
-              <header class="et-card-header">
-                <h3>Description</h3>
-                <p>Help travelers understand what makes your experience special</p>
-              </header>
-              <div class="et-card-body et-stack">
-                <div class="et-field">
-                  <label for="shortDescription">Short Description</label>
-                  <textarea
-                    id="shortDescription" rows="2"
-                    placeholder="A brief summary that appears in search results..."
-                    v-model="form.shortDescription" @input="clearError('shortDescription')"
-                    :class="{ 'has-error': errors.shortDescription }"
-                  />
-                  <p v-if="errors.shortDescription" class="et-error">{{ errors.shortDescription }}</p>
-                </div>
-                <div class="et-field">
-                  <label for="fullDescription">Full Description</label>
-                  <textarea
-                    id="fullDescription" rows="6"
-                    placeholder="Describe the full experience, itinerary, what to expect, what to bring..."
-                    v-model="form.fullDescription" @input="clearError('fullDescription')"
-                    :class="{ 'has-error': errors.fullDescription }"
-                  />
-                  <p v-if="errors.fullDescription" class="et-error">{{ errors.fullDescription }}</p>
-                </div>
-              </div>
-            </section>
-
-            <!-- Actions -->
-            <div class="et-actions">
-              <button
-                type="button" class="et-btn et-btn--danger-ghost"
-                :disabled="isDeleting || isSubmitting" @click="handleDelete"
-              >
-                <span v-if="isDeleting" class="et-spinner et-spinner--sm" />
-                {{ isDeleting ? 'Deleting...' : 'Delete tour' }}
+            </template>
+            <template v-else>
+              <img :src="imagePreview" alt="Tour cover preview" class="et-preview-img" />
+              <button type="button" class="et-change-btn" @click.stop="changeImage">
+                Change photo
               </button>
-              <div class="et-actions-right">
-                <button
-                  type="button" class="et-btn et-btn--outline"
-                  :disabled="isSubmitting || isDeleting" @click="handleCancel"
-                >Cancel</button>
-                <button
-                  type="submit" class="et-btn et-btn--primary"
-                  :disabled="isSubmitting || isDeleting"
-                >
-                  <span v-if="isSubmitting" class="et-spinner et-spinner--sm" />
-                  {{ isSubmitting ? 'Saving...' : 'Save Changes' }}
-                </button>
+            </template>
+
+            <input
+              ref="fileInput"
+              type="file"
+              accept="image/*"
+              class="et-file-input"
+              @change="onFileChange"
+            />
+          </div>
+          <p v-if="errors.image" class="et-error">{{ errors.image }}</p>
+        </section>
+
+        <!-- RIGHT COLUMN -->
+        <section class="et-card et-form-card">
+          <h2 class="et-card-title">Tour details</h2>
+          <p class="et-card-hint">Tell travelers what makes your experience unique.</p>
+
+          <div class="et-field">
+            <label for="title">Tour title</label>
+            <input
+              id="title" type="text" v-model="form.title"
+              placeholder="e.g. Sunset Dolphin Cruise in Tanji"
+              :class="{ 'is-invalid': errors.title }"
+            />
+            <span v-if="errors.title" class="et-error">{{ errors.title }}</span>
+          </div>
+
+          <div class="et-field">
+            <label for="desc">Description</label>
+            <textarea
+              id="desc" v-model="form.description" rows="4"
+              placeholder="Describe the highlights, what's included, and what travelers can expect..."
+              :class="{ 'is-invalid': errors.description }"
+            />
+            <span v-if="errors.description" class="et-error">{{ errors.description }}</span>
+          </div>
+
+          <div class="et-field">
+            <label for="location">Location</label>
+            <input
+              id="location" type="text" v-model="form.location"
+              placeholder="e.g. Banjul, The Gambia"
+              :class="{ 'is-invalid': errors.location }"
+            />
+            <span v-if="errors.location" class="et-error">{{ errors.location }}</span>
+          </div>
+
+          <div class="et-row">
+            <div class="et-field">
+              <label for="price">Price per person (USD)</label>
+              <input
+                id="price" type="number" min="0" v-model="form.price"
+                placeholder="1500"
+                :class="{ 'is-invalid': errors.price }"
+              />
+              <span v-if="errors.price" class="et-error">{{ errors.price }}</span>
+            </div>
+            <div class="et-field">
+              <label for="max">Max participants</label>
+              <input
+                id="max" type="number" min="1" v-model="form.maxParticipants"
+                placeholder="12"
+                :class="{ 'is-invalid': errors.maxParticipants }"
+              />
+              <span v-if="errors.maxParticipants" class="et-error">{{ errors.maxParticipants }}</span>
+            </div>
+          </div>
+
+          <div class="et-row">
+            <div class="et-field">
+              <label for="start">Start date</label>
+              <input
+                id="start" type="date" v-model="form.startDate"
+                :class="{ 'is-invalid': errors.startDate }"
+              />
+              <span v-if="errors.startDate" class="et-error">{{ errors.startDate }}</span>
+            </div>
+            <div class="et-field">
+              <label for="end">End date</label>
+              <input
+                id="end" type="date" v-model="form.endDate"
+                :class="{ 'is-invalid': errors.endDate }"
+              />
+              <span v-if="errors.endDate" class="et-error">{{ errors.endDate }}</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- LIVE PREVIEW -->
+        <section class="et-card et-preview-card">
+          <h2 class="et-card-title">Live preview</h2>
+          <p class="et-card-hint">This is how travelers will see your tour.</p>
+
+          <article class="et-tour-card">
+            <div class="et-tour-image">
+              <img v-if="imagePreview" :src="imagePreview" alt="Tour preview" />
+              <div v-else class="et-tour-image-empty">
+                <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <circle cx="9" cy="9" r="2" />
+                  <path d="M21 15l-5-5L5 21" />
+                </svg>
+                <span>No image yet</span>
+              </div>
+              <span class="et-tour-badge">Gambia</span>
+            </div>
+            <div class="et-tour-body">
+              <div class="et-tour-location">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
+                  <circle cx="12" cy="10" r="3" />
+                </svg>
+                {{ form.location || 'Add a location' }}
+              </div>
+              <h3 class="et-tour-title">{{ form.title || 'Your tour title appears here' }}</h3>
+              <p class="et-tour-desc">
+                {{ form.description || 'A short description of your experience will appear here as you type.' }}
+              </p>
+              <div class="et-tour-footer">
+                <div class="et-tour-price">
+                  <strong>{{ previewPrice }}</strong>
+                  <span>/ person</span>
+                </div>
+                <div class="et-tour-meta">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M23 21v-2a4 4 0 00-3-3.87" />
+                    <path d="M16 3.13a4 4 0 010 7.75" />
+                  </svg>
+                  Up to {{ form.maxParticipants || 0 }}
+                </div>
               </div>
             </div>
-          </form>
+          </article>
+        </section>
 
-          <!-- Preview -->
-          <aside class="et-preview">
-            <section class="et-card">
-              <header class="et-card-header et-card-header--muted">
-                <h3>Live Preview</h3>
-                <p>This is how your tour will appear to travelers</p>
-              </header>
-              <div class="et-preview-body">
-                <div class="et-preview-image">
-                  <img v-if="imagePreview" :src="imagePreview" alt="Tour preview" />
-                  <div v-else class="et-preview-empty">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                    <span>Your image will appear here</span>
-                  </div>
-                  <span v-if="form.category" class="et-chip">{{ form.category }}</span>
-                </div>
-                <div class="et-preview-content">
-                  <h4>{{ form.title || 'Your tour title' }}</h4>
-                  <div v-if="form.location" class="et-preview-meta">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                    {{ form.location }}
-                  </div>
-                  <p class="et-preview-desc">
-                    {{ form.shortDescription || 'Your short description will appear here...' }}
-                  </p>
-                  <div class="et-preview-footer">
-                    <div v-if="form.price" class="et-price">
-                      <strong>GMD {{ Number(form.price).toLocaleString() }}</strong>
-                      <span>/person</span>
-                    </div>
-                    <div v-if="form.maxParticipants" class="et-preview-meta et-preview-meta--right">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                      Max {{ form.maxParticipants }}
-                    </div>
-                  </div>
-                  <div v-if="dateRangeLabel" class="et-preview-meta et-preview-meta--small">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                    {{ dateRangeLabel }}
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <section class="et-card et-card--tips">
-              <header class="et-card-header"><h3>Editing Tips</h3></header>
-              <div class="et-card-body">
-                <ul class="et-tips">
-                  <li><span class="et-check">✓</span> Keep your photo fresh — update it each season for better bookings</li>
-                  <li><span class="et-check">✓</span> Adjust pricing based on demand and feedback from past travelers</li>
-                  <li><span class="et-check">✓</span> Refine your description with details guests asked about most</li>
-                  <li><span class="et-check">✓</span> Keep availability dates current so the listing stays bookable</li>
-                </ul>
-              </div>
-            </section>
-          </aside>
+        <!-- ACTIONS -->
+        <div class="et-actions">
+          <button type="button" class="et-btn et-btn-secondary" @click="onCancel" :disabled="isSubmitting">
+            Cancel
+          </button>
+          <button type="submit" class="et-btn et-btn-primary" :disabled="isSubmitting">
+            <span v-if="isSubmitting" class="et-spinner" />
+            {{ isSubmitting ? 'Saving...' : 'Save Changes' }}
+          </button>
         </div>
-      </main>
-
-      <!-- Toast -->
-      <transition name="et-fade">
-        <div v-if="toast" class="et-toast" :class="`et-toast--${toast.kind}`">
-          <div class="et-toast-icon">✓</div>
-          <div>
-            <div class="et-toast-title">{{ toast.message }}</div>
-            <div v-if="toast.description" class="et-toast-desc">{{ toast.description }}</div>
-          </div>
-        </div>
-      </transition>
-    </template>
+      </form>
+    </div>
   </div>
 </template>
 
 <style scoped>
 .et-page {
   --et-primary: #f59e0b;
-  --et-primary-hover: #d97706;
+  --et-primary-dark: #d97706;
+  --et-primary-soft: #fff7ed;
   --et-accent: #15803d;
-  --et-bg: #fafaf9;
+  --et-accent-soft: #ecfdf5;
+  --et-text: #0f172a;
+  --et-muted: #64748b;
+  --et-border: #e5e7eb;
+  --et-bg: #fafaf7;
   --et-card: #ffffff;
-  --et-border: #e7e5e4;
-  --et-text: #1c1917;
-  --et-muted: #78716c;
   --et-danger: #dc2626;
-  --et-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.04);
+  --et-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --et-shadow: 0 4px 16px -4px rgba(15, 23, 42, 0.08), 0 2px 6px -2px rgba(15, 23, 42, 0.04);
   --et-radius: 16px;
 
-  min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Roboto, Helvetica, Arial, sans-serif;
   background: var(--et-bg);
   color: var(--et-text);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  min-height: 100vh;
+  padding: 32px 16px 64px;
   -webkit-font-smoothing: antialiased;
 }
 
-.et-loading {
-  min-height: 100vh;
-  display: flex; align-items: center; justify-content: center; gap: 12px;
-  color: var(--et-muted); font-size: 14px;
-}
-.et-spinner {
-  width: 20px; height: 20px; border-radius: 50%;
-  border: 2px solid var(--et-border); border-top-color: var(--et-primary);
-  animation: et-spin 0.8s linear infinite;
-}
-.et-spinner--sm { width: 14px; height: 14px; border-width: 2px; }
-@keyframes et-spin { to { transform: rotate(360deg); } }
+.et-container { max-width: 1180px; margin: 0 auto; }
 
-.et-header {
-  border-bottom: 1px solid var(--et-border);
-  background: rgba(255,255,255,0.7);
-  backdrop-filter: blur(8px);
-  position: sticky; top: 0; z-index: 10;
+/* Header */
+.et-header { margin-bottom: 32px; }
+.et-eyebrow {
+  display: inline-block;
+  font-size: 12px; font-weight: 600; letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--et-primary-dark);
+  background: var(--et-primary-soft);
+  padding: 6px 12px; border-radius: 999px;
+  margin-bottom: 14px;
 }
-.et-header-inner {
-  max-width: 1200px; margin: 0 auto; padding: 16px 24px;
-  display: flex; align-items: center; justify-content: space-between;
+.et-title {
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: 700; letter-spacing: -0.02em;
+  margin: 0 0 8px;
 }
-.et-brand { display: flex; align-items: center; gap: 10px; }
-.et-logo {
-  width: 32px; height: 32px; border-radius: 10px;
-  background: var(--et-primary); color: white;
-  display: flex; align-items: center; justify-content: center;
-}
-.et-logo svg { width: 18px; height: 18px; }
-.et-brand-name { font-weight: 600; font-size: 17px; letter-spacing: -0.01em; }
-.et-header-meta { font-size: 13px; color: var(--et-muted); }
-
-.et-main { max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
-
-.et-back {
-  display: inline-flex; align-items: center; gap: 6px;
-  background: none; border: none; cursor: pointer; padding: 0; margin-bottom: 16px;
-  color: var(--et-muted); font-size: 14px; transition: color 0.15s;
-}
-.et-back:hover { color: var(--et-text); }
-.et-back svg { width: 16px; height: 16px; }
-
-.et-title-row {
-  display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between;
-  gap: 16px; margin-bottom: 32px;
-}
-.et-title-row h1 { font-size: 30px; font-weight: 700; letter-spacing: -0.02em; margin: 0; }
-.et-title-row p { color: var(--et-muted); margin: 8px 0 0; font-size: 15px; }
-.et-id-pill {
-  background: #f5f5f4; color: var(--et-muted);
-  padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 500;
+.et-subtitle {
+  font-size: 16px; color: var(--et-muted); margin: 0; max-width: 560px;
 }
 
-.et-grid { display: grid; gap: 32px; grid-template-columns: 1fr; }
-@media (min-width: 1024px) { .et-grid { grid-template-columns: 1fr 1fr; } }
+/* Grid */
+.et-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+.et-image-card { grid-column: 1; }
+.et-form-card { grid-column: 2; grid-row: span 2; }
+.et-preview-card { grid-column: 1; }
+.et-actions { grid-column: 1 / -1; }
 
-.et-form { display: flex; flex-direction: column; gap: 24px; }
+@media (max-width: 900px) {
+  .et-grid { grid-template-columns: 1fr; }
+  .et-image-card, .et-form-card, .et-preview-card { grid-column: 1; grid-row: auto; }
+}
 
+/* Cards */
 .et-card {
   background: var(--et-card);
   border: 1px solid var(--et-border);
   border-radius: var(--et-radius);
   box-shadow: var(--et-shadow);
+  padding: 24px;
+}
+.et-card-title { font-size: 18px; font-weight: 600; margin: 0 0 4px; }
+.et-card-hint { font-size: 14px; color: var(--et-muted); margin: 0 0 20px; }
+
+/* Dropzone */
+.et-dropzone {
+  position: relative;
+  border: 2px dashed var(--et-border);
+  border-radius: 12px;
+  background: #fafafa;
+  min-height: 280px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
   overflow: hidden;
 }
-.et-card-header { padding: 20px 24px; }
-.et-card-header--muted { background: #f5f5f4; border-bottom: 1px solid var(--et-border); }
-.et-card-header h3 { margin: 0; font-size: 15px; font-weight: 600; }
-.et-card-header p { margin: 4px 0 0; font-size: 13px; color: var(--et-muted); }
-.et-card-body { padding: 0 24px 24px; }
-.et-stack > * + * { margin-top: 16px; }
-.et-row { display: grid; gap: 16px; grid-template-columns: 1fr; }
-@media (min-width: 560px) { .et-row { grid-template-columns: 1fr 1fr; } }
+.et-dropzone:hover { border-color: var(--et-primary); background: var(--et-primary-soft); }
+.et-dropzone.is-dragging { border-color: var(--et-primary); background: var(--et-primary-soft); transform: scale(1.01); }
+.et-dropzone.has-image { padding: 0; cursor: default; border-style: solid; background: #000; }
+.et-dropzone.has-error { border-color: var(--et-danger); }
 
-.et-field { display: flex; flex-direction: column; gap: 6px; }
-.et-field label { font-size: 13px; font-weight: 500; }
-.et-field input,
-.et-field select,
-.et-field textarea {
-  width: 100%; box-sizing: border-box;
-  padding: 9px 12px;
-  border: 1px solid var(--et-border);
-  border-radius: 8px; background: transparent;
-  font-size: 14px; font-family: inherit; color: var(--et-text);
-  transition: border-color 0.15s, box-shadow 0.15s;
+.et-drop-inner { text-align: center; padding: 24px; }
+.et-drop-icon {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: var(--et-primary-soft); color: var(--et-primary-dark);
+  display: inline-flex; align-items: center; justify-content: center;
+  margin-bottom: 16px;
 }
-.et-field textarea { resize: vertical; min-height: 70px; }
-.et-field input:focus,
-.et-field select:focus,
-.et-field textarea:focus {
+.et-drop-title { font-size: 16px; font-weight: 600; margin: 0 0 4px; }
+.et-drop-sub { font-size: 14px; color: var(--et-muted); margin: 0 0 12px; }
+.et-link { color: var(--et-primary-dark); font-weight: 600; }
+.et-drop-meta { font-size: 12px; color: var(--et-muted); margin: 0; }
+.et-file-input { display: none; }
+
+.et-preview-img { width: 100%; height: 100%; min-height: 280px; max-height: 360px; object-fit: cover; display: block; }
+.et-change-btn {
+  position: absolute; bottom: 12px; right: 12px;
+  background: rgba(255,255,255,0.95);
+  border: none; padding: 8px 14px; border-radius: 999px;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  box-shadow: var(--et-shadow-sm);
+  transition: background 0.2s;
+}
+.et-change-btn:hover { background: #fff; }
+
+/* Form fields */
+.et-field { display: flex; flex-direction: column; margin-bottom: 18px; }
+.et-field:last-child { margin-bottom: 0; }
+.et-field label { font-size: 14px; font-weight: 600; margin-bottom: 6px; color: var(--et-text); }
+.et-field input, .et-field textarea {
+  font: inherit; font-size: 15px;
+  padding: 11px 14px;
+  border: 1px solid var(--et-border);
+  border-radius: 10px;
+  background: #fff; color: var(--et-text);
+  transition: border-color 0.15s, box-shadow 0.15s;
+  width: 100%; box-sizing: border-box;
+}
+.et-field textarea { resize: vertical; min-height: 100px; font-family: inherit; }
+.et-field input:focus, .et-field textarea:focus {
   outline: none;
   border-color: var(--et-primary);
-  box-shadow: 0 0 0 3px rgba(245,158,11,0.15);
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.15);
 }
-.has-error { border-color: var(--et-danger) !important; }
-.et-error { color: var(--et-danger); font-size: 12.5px; font-weight: 500; margin: 0; }
+.et-field input.is-invalid, .et-field textarea.is-invalid { border-color: var(--et-danger); }
+.et-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 18px; }
+.et-row .et-field { margin-bottom: 0; }
+@media (max-width: 520px) { .et-row { grid-template-columns: 1fr; } }
 
-.et-dropzone {
+.et-error { color: var(--et-danger); font-size: 13px; margin-top: 6px; display: block; }
+
+/* Tour preview card */
+.et-tour-card {
+  border: 1px solid var(--et-border);
+  border-radius: 14px;
+  overflow: hidden;
+  background: #fff;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.et-tour-card:hover { transform: translateY(-2px); box-shadow: var(--et-shadow); }
+.et-tour-image { position: relative; aspect-ratio: 16 / 10; background: #f3f4f6; }
+.et-tour-image img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.et-tour-image-empty {
+  width: 100%; height: 100%;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  padding: 40px 20px; border: 2px dashed var(--et-border);
-  border-radius: 12px; background: #fafaf9; cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  gap: 8px; color: #cbd5e1; font-size: 13px;
 }
-.et-dropzone:hover { background: #f5f5f4; }
-.et-dropzone.is-dragging { border-color: var(--et-primary); background: rgba(245,158,11,0.05); }
-.et-dropzone-icon { width: 40px; height: 40px; color: var(--et-muted); margin-bottom: 12px; }
-.et-dropzone-title { margin: 0; font-size: 14px; font-weight: 500; }
-.et-dropzone-hint { margin: 4px 0 0; font-size: 12px; color: var(--et-muted); }
+.et-tour-badge {
+  position: absolute; top: 12px; left: 12px;
+  background: var(--et-accent); color: #fff;
+  padding: 4px 10px; border-radius: 999px;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+}
+.et-tour-body { padding: 18px; }
+.et-tour-location {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 13px; color: var(--et-accent); font-weight: 600; margin-bottom: 6px;
+}
+.et-tour-title {
+  font-size: 18px; font-weight: 600; margin: 0 0 8px;
+  line-height: 1.3;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.et-tour-desc {
+  font-size: 14px; color: var(--et-muted); line-height: 1.5; margin: 0 0 16px;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.et-tour-footer {
+  display: flex; justify-content: space-between; align-items: center;
+  padding-top: 14px; border-top: 1px solid var(--et-border);
+}
+.et-tour-price strong { font-size: 18px; color: var(--et-text); }
+.et-tour-price span { font-size: 13px; color: var(--et-muted); margin-left: 2px; }
+.et-tour-meta {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 13px; color: var(--et-muted);
+}
 
-.et-image-wrap { position: relative; border-radius: 12px; overflow: hidden; }
-.et-image-wrap img { display: block; width: 100%; aspect-ratio: 16/9; object-fit: cover; }
-.et-image-btn {
-  position: absolute; background: rgba(0,0,0,0.6); color: white; border: none;
-  backdrop-filter: blur(4px); cursor: pointer; transition: background 0.15s;
-}
-.et-image-btn:hover { background: rgba(0,0,0,0.8); }
-.et-image-btn--icon {
-  top: 8px; right: 8px; width: 32px; height: 32px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-}
-.et-image-btn--icon svg { width: 16px; height: 16px; }
-.et-image-btn--label {
-  bottom: 8px; right: 8px; padding: 6px 12px; border-radius: 999px;
-  font-size: 12px; font-weight: 500;
-}
-
+/* Actions */
 .et-actions {
-  display: flex; flex-direction: column-reverse; gap: 12px;
-  justify-content: space-between; align-items: stretch;
+  display: flex; justify-content: flex-end; gap: 12px;
+  padding-top: 8px;
 }
-@media (min-width: 560px) {
-  .et-actions { flex-direction: row; align-items: center; }
+@media (max-width: 520px) {
+  .et-actions { flex-direction: column-reverse; }
+  .et-actions .et-btn { width: 100%; }
 }
-.et-actions-right { display: flex; flex-direction: column-reverse; gap: 12px; }
-@media (min-width: 560px) { .et-actions-right { flex-direction: row; } }
 
 .et-btn {
+  font: inherit; font-size: 15px; font-weight: 600;
+  padding: 12px 24px; border-radius: 10px;
+  border: 1px solid transparent; cursor: pointer;
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  padding: 0 16px; height: 38px; border-radius: 8px;
-  font-size: 14px; font-weight: 500; cursor: pointer; border: 1px solid transparent;
-  font-family: inherit; transition: background 0.15s, border-color 0.15s, color 0.15s;
+  transition: all 0.15s ease;
+  min-height: 46px;
 }
 .et-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-.et-btn--primary { background: var(--et-primary); color: white; }
-.et-btn--primary:hover:not(:disabled) { background: var(--et-primary-hover); }
-.et-btn--outline { background: white; border-color: var(--et-border); color: var(--et-text); }
-.et-btn--outline:hover:not(:disabled) { background: #f5f5f4; }
-.et-btn--danger-ghost { background: transparent; color: var(--et-danger); }
-.et-btn--danger-ghost:hover:not(:disabled) { background: rgba(220,38,38,0.08); }
+.et-btn-primary {
+  background: var(--et-primary); color: #fff;
+  box-shadow: 0 4px 12px -2px rgba(245, 158, 11, 0.4);
+}
+.et-btn-primary:hover:not(:disabled) { background: var(--et-primary-dark); transform: translateY(-1px); }
+.et-btn-secondary {
+  background: #fff; color: var(--et-text); border-color: var(--et-border);
+}
+.et-btn-secondary:hover:not(:disabled) { background: #f9fafb; border-color: #d1d5db; }
 
-/* Preview */
-.et-preview { position: relative; }
-@media (min-width: 1024px) {
-  .et-preview { position: sticky; top: 96px; align-self: flex-start; }
+.et-spinner {
+  width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: et-spin 0.7s linear infinite;
 }
-.et-preview-body { padding: 0; }
-.et-preview-image {
-  position: relative; aspect-ratio: 16/9; background: #f5f5f4;
-}
-.et-preview-image img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.et-preview-empty {
-  width: 100%; height: 100%; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 8px; color: var(--et-muted);
-}
-.et-preview-empty svg { width: 48px; height: 48px; opacity: 0.4; }
-.et-preview-empty span { font-size: 13px; }
-.et-chip {
-  position: absolute; top: 12px; left: 12px;
-  background: rgba(0,0,0,0.6); color: white; padding: 4px 12px;
-  border-radius: 999px; font-size: 11px; font-weight: 500; backdrop-filter: blur(4px);
-}
-.et-preview-content { padding: 20px; display: flex; flex-direction: column; gap: 12px; }
-.et-preview-content h4 { margin: 0; font-size: 18px; font-weight: 600; line-height: 1.3; }
-.et-preview-meta {
-  display: flex; align-items: center; gap: 6px;
-  color: var(--et-muted); font-size: 13px;
-}
-.et-preview-meta svg { width: 14px; height: 14px; }
-.et-preview-meta--right { margin-left: auto; }
-.et-preview-meta--small { font-size: 12px; }
-.et-preview-desc { margin: 0; font-size: 13.5px; color: var(--et-muted); line-height: 1.55; }
-.et-preview-footer {
-  display: flex; align-items: center; gap: 16px;
-  border-top: 1px solid var(--et-border); padding-top: 12px;
-}
-.et-price { display: flex; align-items: baseline; gap: 4px; }
-.et-price strong { font-size: 18px; font-weight: 700; }
-.et-price span { font-size: 12px; color: var(--et-muted); }
-
-.et-card--tips { margin-top: 24px; }
-.et-tips { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
-.et-tips li {
-  display: flex; align-items: flex-start; gap: 8px;
-  font-size: 13.5px; color: var(--et-muted); line-height: 1.5;
-}
-.et-check { color: var(--et-accent); font-weight: 700; flex-shrink: 0; }
+@keyframes et-spin { to { transform: rotate(360deg); } }
 
 /* Toast */
 .et-toast {
-  position: fixed; bottom: 24px; right: 24px; z-index: 100;
-  background: white; border: 1px solid var(--et-border);
-  border-radius: 12px; padding: 14px 18px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.12);
-  display: flex; align-items: flex-start; gap: 12px; max-width: 360px;
+  position: fixed; top: 24px; right: 24px; z-index: 100;
+  background: var(--et-accent); color: #fff;
+  padding: 12px 18px; border-radius: 12px;
+  display: inline-flex; align-items: center; gap: 10px;
+  font-size: 14px; font-weight: 600;
+  box-shadow: 0 10px 30px -8px rgba(21, 128, 61, 0.45);
 }
-.et-toast-icon {
-  width: 24px; height: 24px; border-radius: 50%;
-  background: var(--et-accent); color: white;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 14px; font-weight: 700; flex-shrink: 0;
-}
-.et-toast-title { font-size: 14px; font-weight: 600; }
-.et-toast-desc { font-size: 13px; color: var(--et-muted); margin-top: 2px; }
-.et-fade-enter-active, .et-fade-leave-active { transition: opacity 0.2s, transform 0.2s; }
-.et-fade-enter-from, .et-fade-leave-to { opacity: 0; transform: translateY(8px); }
+.et-toast-enter-from, .et-toast-leave-to { opacity: 0; transform: translateY(-12px); }
+.et-toast-enter-active, .et-toast-leave-active { transition: all 0.25s ease; }
 </style>

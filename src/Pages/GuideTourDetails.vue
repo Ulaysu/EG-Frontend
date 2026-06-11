@@ -10,6 +10,7 @@ const route = useRoute()
 const tour = ref(null)
 const loading = ref(true)
 const error = ref(null)
+const toasts = ref([])
 
 const fallbackDate = '1970-01-01'
 
@@ -26,8 +27,14 @@ const dateFmt = (date) =>
     year: 'numeric',
   })
 
-const startDate = computed(() => tour.value?.startDate || fallbackDate)
-const endDate = computed(() => tour.value?.endDate || fallbackDate)
+
+ const durationDays = computed(() => {
+          if (!tour.value?.startDate || !tour.value?.endDate) return 0;
+          const start = new Date(tour.value.startDate);
+          const end = new Date(tour.value.endDate);
+          const diff = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+          return diff > 0 ? diff : 1;
+        });
 
 const availabilityLabel = computed(() =>
   tour.value?.isAvailable ? 'Available' : 'Unavailable'
@@ -62,8 +69,15 @@ const stats = computed(() => {
       tint: 'from-sky-500 to-indigo-500',
     },
     {
+      label: 'Duration',
+      value: `${durationDays.value} day${durationDays.value !== 1 ? 's' : ''}`,
+      icon: 'M8 7V3M16 7V3M3 11h18M5 5h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z',
+      tint: 'from-emerald-500 to-teal-500',
+    }
+    ,
+    {
       label: 'Status',
-      value: tour.value.isAvailable ? 'Open' : 'Closed',
+      value: availabilityLabel.value,
       icon: 'M5 13l4 4L19 7',
       tint: 'from-emerald-500 to-teal-500',
     },
@@ -77,19 +91,20 @@ const stats = computed(() => {
 })
 
 async function loadTourDetails() {
+
   try {
       loading.value = true
     error.value = null
 
     const id = route.params.id
+    console.log('Tour ID:', id)
 
     if (!id) {
       throw new Error('Tour id is missing')
     }
 
     const response = await getMyTourById(id)
-
-    console.log('Tour Details:', response)
+   
 
     tour.value = response
   } catch (err) {
@@ -106,7 +121,7 @@ function retry() {
 }
 
 function edit() {
-  router.push(`/guide/tours/edit/${tour.value.id}`)
+  router.push(`/tours/edit/${tour.value.id}`)
 }
 
 function manageBookings() {
@@ -132,7 +147,15 @@ async function toggleAvailability() {
     console.error(err)
   }
 }
+ 
 
+        function pushToast(message, type = 'info') {
+          const id = Date.now() + Math.random();
+          toasts.value.push({ id, message, type });
+          setTimeout(() => {
+            toasts.value = toasts.value.filter(t => t.id !== id);
+          }, 3000);
+        }
 async function deleteTour() {
   const confirmed = window.confirm(
     `Delete "${tour.value.title}"?`
@@ -268,7 +291,7 @@ onMounted(loadTourDetails)
                         <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
                         <circle cx="9" cy="7" r="4" />
                       </svg>
-                      {{ tour.maxParticipants }}
+                      {{ tour.maxParticipants}}
                     </dd>
                   </div>
                   <div class="rounded-xl bg-slate-50 p-4">

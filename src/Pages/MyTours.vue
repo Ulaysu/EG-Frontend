@@ -102,7 +102,7 @@ function viewTour(tour) {
 }
 
 function editTour(tour) {
-  router.push(`/guide/tours/edit/${tour.tourId}`)
+  router.push(`/tours/edit/${tour.id}`)
 }
 
 /*async function removeTour(tour) {
