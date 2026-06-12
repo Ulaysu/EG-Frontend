@@ -2,7 +2,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getMyTourById } from '@/services/toursService'
+import { getMyTourById, updateTourAvailability } from '@/services/toursService'
 
 const router = useRouter()
 const route = useRoute()
@@ -11,6 +11,7 @@ const tour = ref(null)
 const loading = ref(true)
 const error = ref(null)
 const toasts = ref([])
+const isUpdatingAvailability = ref(false)
 
 const fallbackDate = '1970-01-01'
 
@@ -133,18 +134,34 @@ function viewParticipants() {
 }
 
 async function toggleAvailability() {
+  if (!tour.value) return
+
   try {
-    // wire backend later
+    isUpdatingAvailability.value = true
 
-    tour.value.isAvailable =
-      !tour.value.isAvailable
+    const updatedTour =
+      await updateTourAvailability(
+        tour.value.id,
+        !tour.value.isAvailable
+      )
 
-    console.log(
-      'Availability changed:',
-      tour.value.isAvailable
+    tour.value = updatedTour
+
+    pushToast(
+      updatedTour.isAvailable
+        ? 'Tour is now available.'
+        : 'Tour is now unavailable.',
+      'success'
     )
   } catch (err) {
     console.error(err)
+
+    pushToast(
+      err.message || 'Failed to update availability.',
+      'error'
+    )
+  } finally {
+    isUpdatingAvailability.value = false
   }
 }
  

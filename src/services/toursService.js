@@ -54,6 +54,30 @@ export async function getTours(pageNumber = 1, pageSize = 10) {
   return payload.map(normalizeTour)
 }
 
+export async function updateTourAvailability(id, isAvailable) {
+  if (!id) {
+    throw createAppError('Tour id is required.', {
+      code: 'INVALID_INPUT'
+    })
+  }
+
+  const payload = await Request(`/tours/${id}/availability`, {
+    method: 'PATCH',
+    body: {
+      isAvailable
+    }
+  })
+
+  if (!payload || typeof payload !== 'object') {
+    throw createAppError('Unexpected availability update response.', {
+      code: 'INVALID_RESPONSE',
+      cause: payload
+    })
+  }
+
+  return normalizeTour(payload)
+}
+
 export async function getMyTourById(id) {
   if (!id) {
     throw createAppError('Tour id is required.', {
