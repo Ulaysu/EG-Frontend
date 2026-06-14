@@ -51,6 +51,14 @@ const routes = [
   }
 },
 {
+  path: '/guide/tours/:tourId/participants',
+  name: 'tour-participants',
+  component: () => import('../Pages/ViewParticipants.vue'),
+  meta: { requiresAuth: true,
+    roles: ['guide']
+   }
+},
+{
   path: '/tours/guidedetails/:id',
   name: 'guide-tour-details',
   component: () => import('../Pages/GuideTourDetails.vue'),

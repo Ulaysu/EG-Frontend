@@ -15,6 +15,25 @@ function normalizeTour(rawTour) {
   }
 }
 
+export async function getTourParticipants(tourId) {
+  if (!tourId) {
+    throw createAppError('Tour id is required.', {
+      code: 'INVALID_INPUT'
+    })
+  }
+
+  const payload = await Request(`/tours/${tourId}/participants`)
+
+  if (!Array.isArray(payload)) {
+    throw createAppError('Unexpected participants response format.', {
+      code: 'INVALID_RESPONSE',
+      cause: payload
+    })
+  }
+
+  return payload
+}
+
 export async function getMyTours() {
   const payload = await Request('/tours/my')
 
