@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getMyTours} from '@/services/toursService'
+import { getMyTours, deleteTour } from '@/services/toursService'
 
 const router = useRouter()
 
@@ -105,7 +105,7 @@ function editTour(tour) {
   router.push(`/tours/edit/${tour.id}`)
 }
 
-/*async function removeTour(tour) {
+async function removeTour(tour) {
   const confirmed = window.confirm(
     `Delete "${tour.title}"?`
   )
@@ -113,16 +113,16 @@ function editTour(tour) {
   if (!confirmed) return
 
   try {
-    await deleteTour(tour.tourId)
-
+    const response = await deleteTour(tour.id)
+    alert(response.message || 'Tour deleted successfully');
     tours.value = tours.value.filter(
-      (x) => x.tourId !== tour.tourId
+      (x) => x.id !== tour.id
     )
   } catch (err) {
     console.error(err)
     alert('Failed to delete tour')
   }
-}*/
+}
 
 function retry() {
   loadTours()

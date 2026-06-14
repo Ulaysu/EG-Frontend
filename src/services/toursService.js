@@ -144,6 +144,20 @@ export async function updateTour(id, data) {
   return normalizeTour(payload)
 }
 
+export async function deleteTour(id) {
+  if (!id) {
+    throw createAppError('Tour id is required.', {
+      code: 'INVALID_INPUT'
+    })
+  }
+
+  const payload = await Request(`/tours/${id}`, {
+    method: 'DELETE'
+  })
+
+  return payload
+}
+
 export async function getTourById(id) {
   if (!id) {
     throw createAppError('Tour id is required.', {

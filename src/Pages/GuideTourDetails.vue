@@ -2,7 +2,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getMyTourById, updateTourAvailability } from '@/services/toursService'
+import { getMyTourById, updateTourAvailability, deleteTour as deleteTourService } from '@/services/toursService'
 
 const router = useRouter()
 const route = useRoute()
@@ -125,9 +125,9 @@ function edit() {
   router.push(`/tours/edit/${tour.value.id}`)
 }
 
-function manageBookings() {
+/*function manageBookings() {
   router.push(`/guide/tours/${tour.value.id}/bookings`)
-}
+}*/
 
 function viewParticipants() {
   router.push(`/guide/tours/${tour.value.id}/participants`)
@@ -174,6 +174,8 @@ async function toggleAvailability() {
           }, 3000);
         }
 async function deleteTour() {
+  if (!tour.value) return
+
   const confirmed = window.confirm(
     `Delete "${tour.value.title}"?`
   )
@@ -181,13 +183,23 @@ async function deleteTour() {
   if (!confirmed) return
 
   try {
-    // wire backend delete later
+    await deleteTourService(tour.value.id)
 
-    console.log('Delete tour:', tour.value.id)
+    pushToast(
+      `${tour.value.title} deleted successfully.`,
+      'success'
+    )
 
-    router.push('/guide/tours')
+    setTimeout(() => {
+      router.push('/guide/tours')
+    }, 1000)
   } catch (err) {
     console.error(err)
+
+    pushToast(
+      err.message || 'Failed to delete tour.',
+      'error'
+    )
   }
 }
 
@@ -353,6 +365,7 @@ onMounted(loadTourDetails)
                     </svg>
                     Edit Tour
                   </button>
+                  <!--
                   <button type="button" @click="manageBookings" class="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2">
                     <svg class="h-4 w-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                       <rect x="3" y="4" width="18" height="18" rx="2" />
@@ -362,6 +375,7 @@ onMounted(loadTourDetails)
                     </svg>
                     Manage Bookings
                   </button>
+                  -->
                   <button type="button" @click="viewParticipants" class="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2">
                     <svg class="h-4 w-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                       <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
