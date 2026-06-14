@@ -41,6 +41,22 @@
             Profile
           </router-link>
 
+          <router-link
+            v-if="authStore.isAuthenticated"
+            :to="{ name: 'create-tour' }"
+            class="text-slate-600 hover:text-amber-600 transition-colors font-medium"
+          >
+            Create Tour
+          </router-link>
+                <router-link
+            v-if="authStore.isAuthenticated"
+            :to="{ name: 'guide-tours' }"
+            class="text-slate-600 hover:text-amber-600 transition-colors font-medium"
+          >
+            My Tours
+          </router-link>
+
+
           <div v-if="!authStore.isAuthenticated" class="flex items-center space-x-3">
             <router-link :to="{name: 'login'}">
               <button class="border border-amber-500 text-amber-600 hover:bg-amber-50 px-4 py-2 rounded-md">
@@ -108,7 +124,20 @@
           >
             Profile
           </router-link>
-        
+          <router-link
+            v-if="authStore.isAuthenticated"
+            :to="{ name: 'create-tour' }"
+            class="text-slate-600 hover:text-amber-600 transition-colors font-medium"
+          >
+            Create Tour
+          </router-link>
+          <router-link
+            v-if="authStore.isAuthenticated"
+            :to="{ name: 'guide-tours' }"
+            class="text-slate-600 hover:text-amber-600 transition-colors font-medium"
+          >
+            My Tours
+          </router-link>
         </nav>
         <div v-if="!authStore.isAuthenticated" class="flex flex-col gap-2 mt-4">
           <router-link :to="{name: 'login'}">
@@ -154,4 +183,6 @@
       closeMobileMenu();
       await router.replace('/home');
     };
+
+    
 </script>

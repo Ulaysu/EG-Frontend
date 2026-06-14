@@ -75,19 +75,31 @@ onMounted(loadTourDetails)
           <div class="hidden lg:block">
             <div class="sticky top-8">
               <BookingCard
+                v-if="tourData.isAvailable"
                 :tourId="tourData.id"
                 :price="tourData.price"
                 :participants="tourData.participants"
                 :isAvailable="tourData.isAvailable"
               />
+              <div v-else class="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-center">
+                 <h3 class="text-lg font-semibold text-amber-800">
+                    Tour Currently Unavailable
+                  </h3>
+
+                  <p class="mt-2 text-sm text-amber-700">
+                    This tour is not accepting bookings at the moment.
+                    Please check back later.
+                  </p>
             </div>
+            </div>
+            
           </div>
 
         </div>
       </div>
 
       <!-- Mobile Booking Bar -->
-      <div class="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-card/95 p-3 backdrop-blur-sm lg:hidden">
+      <div class="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-card/95 p-3 backdrop-blur-sm h-72 lg:hidden">
         <BookingCard
           :tourId="tourData.id"
           :price="tourData.price"

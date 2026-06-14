@@ -11,8 +11,51 @@ function normalizeTour(rawTour) {
      isAvailable: Boolean(rawTour?.isAvailable),
     startDate: rawTour?.startDate || null,
     endDate: rawTour?.endDate || null,
-    participants: Number(rawTour?.participants ?? rawTour?.spotsRemaining ?? 0)
+    maxParticipants: Number(rawTour?.maxParticipants ?? 0),
   }
+}
+
+export async function getTourParticipants(tourId) {
+  if (!tourId) {
+    throw createAppError('Tour id is required.', {
+      code: 'INVALID_INPUT'
+    })
+  }
+
+  const payload = await Request(`/tours/${tourId}/participants`)
+
+  if (!Array.isArray(payload)) {
+    throw createAppError('Unexpected participants response format.', {
+      code: 'INVALID_RESPONSE',
+      cause: payload
+    })
+  }
+
+  return payload
+}
+
+export async function getMyTours() {
+  const payload = await Request('/tours/my')
+
+  if (!Array.isArray(payload)) {
+    throw createAppError('Unexpected tours response format.', {
+      code: 'INVALID_RESPONSE',
+      cause: payload
+    })
+  }
+
+  return payload.map(tour => ({
+    id: tour.tourId,
+    title: tour.title,
+    description: tour.description,
+    location: tour.location,
+    price: tour.price,
+    maxParticipants: tour.maxParticipants,
+    startDate: tour.startDate,
+    endDate: tour.endDate,
+    imageUrl: tour.imageUrl,
+    isAvailable: tour.isAvailable,
+  }))
 }
 
 export async function getTours(pageNumber = 1, pageSize = 10) {
@@ -30,6 +73,90 @@ export async function getTours(pageNumber = 1, pageSize = 10) {
   return payload.map(normalizeTour)
 }
 
+export async function updateTourAvailability(id, isAvailable) {
+  if (!id) {
+    throw createAppError('Tour id is required.', {
+      code: 'INVALID_INPUT'
+    })
+  }
+
+  const payload = await Request(`/tours/${id}/availability`, {
+    method: 'PATCH',
+    body: {
+      isAvailable
+    }
+  })
+
+  if (!payload || typeof payload !== 'object') {
+    throw createAppError('Unexpected availability update response.', {
+      code: 'INVALID_RESPONSE',
+      cause: payload
+    })
+  }
+
+  return normalizeTour(payload)
+}
+
+export async function getMyTourById(id) {
+  if (!id) {
+    throw createAppError('Tour id is required.', {
+      code: 'INVALID_INPUT'
+    })
+  }
+
+  const payload = await Request(`/tours/my/${id}`)
+
+  if (!payload || typeof payload !== 'object') {
+    throw createAppError('Unexpected guide tour response format.', {
+      code: 'INVALID_RESPONSE',
+      cause: payload
+    })
+  } 
+
+  return normalizeTour(payload)
+}
+
+export async function updateTour(id, data) {
+  if (!id) {
+    throw createAppError('Tour id is required.', {
+      code: 'INVALID_INPUT'
+    })
+  }
+
+  if (!data) {
+    throw createAppError('Tour data is required.', {
+      code: 'INVALID_INPUT'
+    })
+  }
+
+  const payload = await Request(`/tours/${id}`, {
+    method: 'PUT',
+    body: data
+  })
+
+  if (!payload || typeof payload !== 'object') {
+    throw createAppError('Unexpected update tour response.', {
+      code: 'INVALID_RESPONSE',
+      cause: payload
+    })
+  }
+
+  return normalizeTour(payload)
+}
+
+export async function deleteTour(id) {
+  if (!id) {
+    throw createAppError('Tour id is required.', {
+      code: 'INVALID_INPUT'
+    })
+  }
+
+  const payload = await Request(`/tours/${id}`, {
+    method: 'DELETE'
+  })
+
+  return payload
+}
 
 export async function getTourById(id) {
   if (!id) {
@@ -44,6 +171,33 @@ export async function getTourById(id) {
   if (!payload || typeof payload !== 'object') {
     throw createAppError('Unexpected tour details response format.', {
       statusCode: null,
+      code: 'INVALID_RESPONSE',
+      cause: payload
+    })
+  }
+
+  return normalizeTour(payload)
+}
+
+export async function createTour(data) {
+  if (!data) {
+    throw createAppError('Tour data is required.', {
+      code: 'INVALID_INPUT'
+    })
+  }
+
+ 
+
+  const payload = await Request('/tours', {
+    method: 'POST',
+    body: data
+  })
+
+    
+
+
+  if (!payload || typeof payload !== 'object') {
+    throw createAppError('Unexpected create tour response.', {
       code: 'INVALID_RESPONSE',
       cause: payload
     })

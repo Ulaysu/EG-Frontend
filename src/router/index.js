@@ -33,6 +33,50 @@ const routes = [
     component: () => import("../Pages/TourDetails.vue")
 },
 {
+  path: '/tours/create',
+  name: 'create-tour',
+  component: () => import('../Pages/CreateTour.vue'),
+  meta: {
+    requiresAuth: true,
+    roles: ['guide'] 
+  }
+},
+{
+  path: '/tours/edit/:id',
+  name: 'edit-tour',
+  component: () => import('../Pages/EditTour.vue'),
+  meta: {
+    requiresAuth: true,
+    roles: ['guide'] 
+  }
+},
+{
+  path: '/guide/tours/:tourId/participants',
+  name: 'tour-participants',
+  component: () => import('../Pages/ViewParticipants.vue'),
+  meta: { requiresAuth: true,
+    roles: ['guide']
+   }
+},
+{
+  path: '/tours/guidedetails/:id',
+  name: 'guide-tour-details',
+  component: () => import('../Pages/GuideTourDetails.vue'),
+  meta: {
+    requiresAuth: true,
+    roles: ['guide'] 
+  }
+},
+{
+  path: '/guide/tours',
+  name: 'guide-tours',
+  component: () => import('../Pages/MyTours.vue'),
+    meta: {
+        requiresAuth: true,
+        roles: ['guide'] 
+    }
+},
+{
     path: "/profile",
     name: "profile",
     component: () => import("../components/Profile.vue"),
