@@ -122,7 +122,7 @@ function retry() {
 }
 
 function edit() {
-  router.push(`/tours/edit/${tour.value.id}`)
+  router.push(`/guide/tours/edit/${tour.value.id}`)
 }
 
 /*function manageBookings() {
