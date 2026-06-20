@@ -92,17 +92,17 @@ const visibleTours = computed(() => {
 })
 
 function createTour() {
-  router.push('/tours/create')
+  router.push('/guide/tours/create')
 }
 
 function viewTour(tour) {
     console.log('Viewing tour', tour)
 
-  router.push(`/tours/guidedetails/${tour.id}`)
+  router.push(`/guide/tours/guidedetails/${tour.id}`)
 }
 
 function editTour(tour) {
-  router.push(`/tours/edit/${tour.id}`)
+  router.push(`/guide/tours/edit/${tour.id}`)
 }
 
 async function removeTour(tour) {
