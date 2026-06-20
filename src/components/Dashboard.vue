@@ -105,7 +105,8 @@ async function loadPayments() {
     payments.value = await getPayments({
       pageNumber: 1,
       pageSize: 50,
-      isAscending: false
+      isAscending: false,
+      sortBy: 'paymentdate'
     })
   }
   catch (error) {
