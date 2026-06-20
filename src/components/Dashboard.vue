@@ -2,7 +2,7 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import {getDashboardStats, getRecentBookings, getRecentPayments,
   getUsers,
-  updateUserStatus, getTours, softDeleteTour, restoreTour
+  updateUserStatus, getTours, softDeleteTour, restoreTour, getBookings, getPayments
 } from  '@/services/adminService'
 
 
@@ -17,7 +17,10 @@ const recentPayments = ref([])
 const users = ref([])
 const tours = ref([])
 const toursLoading = ref(false)
-
+const bookings = ref([])
+const bookingsLoading = ref(false)
+const payments = ref([])
+const paymentsLoading = ref(false)
 
 
 const admin = ref({ name: 'Admin User', email: 'admin@exploregambia.com' })
@@ -76,6 +79,44 @@ async function loadUsers() {
   }
 }
 
+async function loadBookings() {
+  bookingsLoading.value = true
+
+  try {
+    bookings.value = await getBookings({
+      pageNumber: 1,
+      pageSize: 50,
+      sortBy: 'bookingdate',
+      isAscending: false
+    })
+  }
+  catch (error) {
+    console.error('Failed to load bookings', error)
+  }
+  finally {
+    bookingsLoading.value = false
+  }
+}
+
+async function loadPayments() {
+  paymentsLoading.value = true
+
+  try {
+    payments.value = await getPayments({
+      pageNumber: 1,
+      pageSize: 50,
+      isAscending: false
+    })
+  }
+  catch (error) {
+    console.error('Failed to load payments', error)
+  }
+  finally {
+    paymentsLoading.value = false
+  }
+}
+
+
 async function loadTours() {
   toursLoading.value = true
 
@@ -112,6 +153,12 @@ watch(activeNav, async (newTab) => {
   if (newTab === 'tours' && tours.value.length === 0) {
     await loadTours()
   }
+  if (newTab === 'bookings' && bookings.value.length === 0) {
+  await loadBookings()
+  }
+  if (newTab === 'payments' && payments.value.length === 0) {
+    await loadPayments()
+  }
 })
 
 
@@ -145,7 +192,7 @@ function formatDate(d) {
 }
 function statusClasses(s) {
   const v = (s || '').toLowerCase()
-  if (['success', 'confirmed', 'paid', 'completed'].includes(v)) return 'bg-green-100 text-green-700'
+  if (['success', 'confirmed', 'paid', 'completed','succeeded'].includes(v)) return 'bg-green-100 text-green-700'
   if (['pending', 'processing'].includes(v)) return 'bg-amber-100 text-amber-700'
   if (['failed', 'cancelled', 'canceled'].includes(v)) return 'bg-red-100 text-red-700'
   return 'bg-gray-100 text-gray-700'
@@ -470,8 +517,186 @@ onMounted(loadDashboard)
 
   </div>
 </template>
-            <template v-else-if="activeNav === 'bookings'"></template>
-            <template v-else-if="activeNav === 'payments'"></template>
+            <template v-else-if="activeNav === 'bookings'">
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+
+    <div class="px-6 py-4 border-b border-gray-100">
+      <h2 class="font-semibold text-gray-900">
+        Booking Management
+      </h2>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+
+        <thead class="bg-amber-50/60">
+          <tr>
+            <th class="px-6 py-3 text-left">Tour</th>
+            <th class="px-6 py-3 text-left">Location</th>
+            <th class="px-6 py-3 text-left">Customer</th>
+            <th class="px-6 py-3 text-center">People</th>
+            <th class="px-6 py-3 text-right">Amount</th>
+            <th class="px-6 py-3 text-center">Status</th>
+            <th class="px-6 py-3 text-right">Date</th>
+          </tr>
+        </thead>
+
+        <tbody class="divide-y divide-gray-100">
+
+          <tr v-if="bookingsLoading">
+            <td colspan="7" class="px-6 py-10 text-center">
+              Loading bookings...
+            </td>
+          </tr>
+
+          <tr v-else-if="!bookings.length">
+            <td colspan="7" class="px-6 py-10 text-center">
+              No bookings found
+            </td>
+          </tr>
+
+          <tr
+            v-for="booking in bookings"
+            :key="booking.bookingId"
+            class="hover:bg-amber-50/50"
+          >
+            <td class="px-6 py-4">
+              <div class="font-medium text-gray-900">
+                {{ booking.tourTitle }}
+              </div>
+            </td>
+
+            <td class="px-6 py-4 text-gray-600">
+              {{ booking.location }}
+            </td>
+
+            <td class="px-6 py-4">
+              <div class="font-medium">
+                {{ booking.customerName }}
+              </div>
+
+              <span
+                v-if="booking.customerName === 'Guest Customer'"
+                class="text-xs text-gray-400"
+              >
+                Guest Booking
+              </span>
+            </td>
+
+            <td class="px-6 py-4 text-center">
+              {{ booking.numberOfPeople }}
+            </td>
+
+            <td class="px-6 py-4 text-right font-semibold">
+              {{ formatCurrency(booking.totalAmount) }}
+            </td>
+
+            <td class="px-6 py-4 text-center">
+              <span
+                class="px-2 py-1 rounded-md text-xs font-semibold"
+                :class="statusClasses(booking.status)"
+              >
+                {{ booking.status }}
+              </span>
+            </td>
+
+            <td class="px-6 py-4 text-right text-gray-500">
+              {{ formatDate(booking.bookingDate) }}
+            </td>
+          </tr>
+
+        </tbody>
+
+      </table>
+    </div>
+
+  </div>
+</template>
+            <template v-else-if="activeNav === 'payments'">
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+
+    <div class="px-6 py-4 border-b border-gray-100">
+      <h2 class="font-semibold text-gray-900">
+        Payment Management
+      </h2>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+
+        <thead class="bg-amber-50/60">
+          <tr>
+            <th class="px-6 py-3 text-left">Tour</th>
+            <th class="px-6 py-3 text-left">Method</th>
+            <th class="px-6 py-3 text-center">Status</th>
+            <th class="px-6 py-3 text-right">Amount</th>
+            <th class="px-6 py-3 text-right">Booking Date</th>
+            <th class="px-6 py-3 text-right">Payment Date</th>
+          </tr>
+        </thead>
+
+        <tbody class="divide-y divide-gray-100">
+
+          <tr v-if="paymentsLoading">
+            <td colspan="6" class="px-6 py-10 text-center">
+              Loading payments...
+            </td>
+          </tr>
+
+          <tr v-else-if="!payments.length">
+            <td colspan="6" class="px-6 py-10 text-center">
+              No payments found
+            </td>
+          </tr>
+
+          <tr
+            v-for="payment in payments"
+            :key="payment.paymentId"
+            class="hover:bg-amber-50/50"
+          >
+            <td class="px-6 py-4">
+              <div class="font-medium text-gray-900">
+                {{ payment.booking?.tour?.title }}
+              </div>
+
+              <div class="text-xs text-gray-500">
+                {{ payment.booking?.tour?.location }}
+              </div>
+            </td>
+
+            <td class="px-6 py-4">
+              {{ payment.paymentMethod }}
+            </td>
+
+            <td class="px-6 py-4 text-center">
+              <span
+                class="px-2 py-1 rounded-md text-xs font-semibold"
+                :class="statusClasses(payment.status)"
+              >
+                {{ payment.status }}
+              </span>
+            </td>
+
+            <td class="px-6 py-4 text-right font-semibold">
+              {{ formatCurrency(payment.amount) }}
+            </td>
+
+            <td class="px-6 py-4 text-right text-gray-500">
+              {{ formatDate(payment.booking?.bookingDate) }}
+            </td>
+
+            <td class="px-6 py-4 text-right text-gray-500">
+              {{ formatDate(payment.paymentDate) }}
+            </td>
+          </tr>
+
+        </tbody>
+
+      </table>
+    </div>
+
+  </div>
+</template>
           <template v-else-if="activeNav === 'users'">
   <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
 
