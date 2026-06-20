@@ -1,15 +1,24 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import {getDashboardStats, getRecentBookings} from  '@/services/adminService'
+import { ref, onMounted, computed, watch } from 'vue'
+import {getDashboardStats, getRecentBookings, getRecentPayments,
+  getUsers,
+  updateUserStatus, getTours, softDeleteTour, restoreTour
+} from  '@/services/adminService'
 
 
 // ---------- State ----------
 const activeNav = ref('dashboard')
 const sidebarOpen = ref(false)
 const loading = ref(true)
+const usersLoading = ref(false)
 const stats = ref({ totalUsers: 0, totalGuides: 0, totalTours: 0, totalBookings: 0, revenue: 0 })
 const recentBookings = ref([])
 const recentPayments = ref([])
+const users = ref([])
+const tours = ref([])
+const toursLoading = ref(false)
+
+
 
 const admin = ref({ name: 'Admin User', email: 'admin@exploregambia.com' })
 
@@ -28,7 +37,11 @@ async function loadDashboard() {
    loading.value = true
 
   try {
-    const dashboard = await getDashboardStats()
+    const [dashboard, bookings, payments] = await Promise.all([
+      getDashboardStats(),
+      getRecentBookings(),
+      getRecentPayments()
+    ])
 
     stats.value = {
       totalUsers: dashboard.totalUsers,
@@ -38,15 +51,85 @@ async function loadDashboard() {
       revenue: dashboard.revenue
     }
 
+    recentBookings.value = bookings
+    recentPayments.value = payments
 
-  }
-  catch (error) {
+  } catch (error) {
     console.error('Failed to load dashboard stats', error)
-  }
-  finally {
+  } finally {
     loading.value = false
   }
 }
+
+// ---------- Users ----------
+async function loadUsers() {
+  usersLoading.value = true
+
+  try {
+    users.value = await getUsers()
+  }
+  catch (error) {
+    console.error('Failed to load users', error)
+  }
+  finally {
+    usersLoading.value = false
+  }
+}
+
+async function loadTours() {
+  toursLoading.value = true
+
+  try {
+    tours.value = await getTours()
+  }
+  catch (error) {
+    console.error('Failed to load tours', error)
+  }
+  finally {
+    toursLoading.value = false
+  }
+}
+
+async function toggleUserStatus(user) {
+  try {
+    await updateUserStatus(
+      user.id,
+      !user.isActive
+    )
+
+    user.isActive = !user.isActive
+  }
+  catch (error) {
+    console.error('Failed to update user status', error)
+  }
+}
+
+// ---------- Watch Navigation ----------
+watch(activeNav, async (newTab) => {
+  if (newTab === 'users' && users.value.length === 0) {
+    await loadUsers()
+  }
+  if (newTab === 'tours' && tours.value.length === 0) {
+    await loadTours()
+  }
+})
+
+
+async function toggleTourStatus(tour) {
+  try {
+    if (tour.isDeleted) {
+      await restoreTour(tour.tourId)
+      tour.isDeleted = false
+    } else {
+      await softDeleteTour(tour.tourId)
+      tour.isDeleted = true
+    }
+  }
+  catch (error) {
+    console.error('Failed to update tour', error)
+  }
+}
+
 
 function logout() {
   localStorage.removeItem('admin_token')
@@ -234,10 +317,10 @@ onMounted(loadDashboard)
                         <td colspan="5" class="px-6 py-10 text-center text-gray-400">No bookings yet</td>
                       </tr>
                       <tr v-for="b in recentBookings" :key="b.bookingId" class="hover:bg-amber-50/50 transition-colors">
-                        <td class="px-6 py-3 font-medium text-gray-900">{{ b.tourName }}</td>
-                        <td class="px-6 py-3 text-gray-600">{{ b.customer }}</td>
+                        <td class="px-6 py-3 font-medium text-gray-900">{{ b.tourTitle }}</td>
+                        <td class="px-6 py-3 text-gray-600">{{ b.customerName }}</td>
                         <td class="px-6 py-3"><span class="px-2 py-1 rounded-md text-xs font-semibold" :class="statusClasses(b.status)">{{ b.status }}</span></td>
-                        <td class="px-6 py-3 text-right font-semibold">{{ formatCurrency(b.amount) }}</td>
+                        <td class="px-6 py-3 text-right font-semibold">{{ formatCurrency(b.totalAmount) }}</td>
                         <td class="px-6 py-3 text-right text-gray-500">{{ formatDate(b.bookingDate) }}</td>
                       </tr>
                     </tbody>
@@ -283,12 +366,224 @@ onMounted(loadDashboard)
             </section>
           </template>
 
-          <template v-else>
-            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
-              <h2 class="text-xl font-semibold text-gray-900">{{ pageTitle }}</h2>
-              <p class="mt-2 text-gray-500">This section is a placeholder. Wire it up to your {{ pageTitle.toLowerCase() }} endpoint.</p>
+            <template v-else-if="activeNav === 'tours'">
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+
+    <div class="px-6 py-4 border-b border-gray-100">
+      <h2 class="font-semibold text-gray-900">
+        Tour Management
+      </h2>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+
+        <thead class="bg-amber-50/60">
+          <tr>
+            <th class="px-6 py-3 text-left">Tour</th>
+            <th class="px-6 py-3 text-left">Guide</th>
+            <th class="px-6 py-3 text-left">Location</th>
+            <th class="px-6 py-3 text-right">Price</th>
+            <th class="px-6 py-3 text-center">Available</th>
+            <th class="px-6 py-3 text-center">Status</th>
+            <th class="px-6 py-3 text-center">Action</th>
+          </tr>
+        </thead>
+
+        <tbody class="divide-y divide-gray-100">
+
+          <tr v-if="toursLoading">
+            <td colspan="7" class="px-6 py-10 text-center">
+              Loading tours...
+            </td>
+          </tr>
+
+          <tr v-else-if="!tours.length">
+            <td colspan="7" class="px-6 py-10 text-center">
+              No tours found
+            </td>
+          </tr>
+
+          <tr
+            v-for="tour in tours"
+            :key="tour.tourId"
+            class="hover:bg-amber-50/50"
+          >
+            <td class="px-6 py-4">
+              <div class="font-medium text-gray-900">
+                {{ tour.title }}
+              </div>
+            </td>
+
+            <td class="px-6 py-4">
+              {{ tour.guideName }}
+            </td>
+
+            <td class="px-6 py-4">
+              {{ tour.location }}
+            </td>
+
+            <td class="px-6 py-4 text-right font-medium">
+              {{ formatCurrency(tour.price) }}
+            </td>
+
+            <td class="px-6 py-4 text-center">
+              <span
+                class="px-2 py-1 rounded-md text-xs font-semibold"
+                :class="tour.isAvailable
+                  ? 'bg-green-100 text-green-700'
+                  : 'bg-red-100 text-red-700'"
+              >
+                {{ tour.isAvailable ? 'Available' : 'Unavailable' }}
+              </span>
+            </td>
+
+            <td class="px-6 py-4 text-center">
+              <span
+                class="px-2 py-1 rounded-md text-xs font-semibold"
+                :class="tour.isDeleted
+                  ? 'bg-red-100 text-red-700'
+                  : 'bg-green-100 text-green-700'"
+              >
+                {{ tour.isDeleted ? 'Deleted' : 'Active' }}
+              </span>
+            </td>
+
+            <td class="px-6 py-4 text-center">
+              <button
+                @click="toggleTourStatus(tour)"
+                class="font-medium"
+                :class="tour.isDeleted
+                  ? 'text-green-600 hover:text-green-700'
+                  : 'text-red-600 hover:text-red-700'"
+              >
+                {{ tour.isDeleted ? 'Restore' : 'Delete' }}
+              </button>
+            </td>
+
+          </tr>
+
+        </tbody>
+
+      </table>
+    </div>
+
+  </div>
+</template>
+            <template v-else-if="activeNav === 'bookings'"></template>
+            <template v-else-if="activeNav === 'payments'"></template>
+          <template v-else-if="activeNav === 'users'">
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+
+    <!-- Header -->
+    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+      <div>
+        <h2 class="font-semibold text-gray-900 text-lg">Users</h2>
+        <p class="text-sm text-gray-500">
+          Manage registered users and account status
+        </p>
+      </div>
+
+      <div class="text-sm text-gray-500">
+        {{ users.length }} users
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div
+      v-if="loadingUsers"
+      class="p-10 text-center text-gray-400"
+    >
+      Loading users...
+    </div>
+
+    <!-- Empty State -->
+    <div
+      v-else-if="!users.length"
+      class="p-10 text-center text-gray-400"
+    >
+      No users found.
+    </div>
+
+    <!-- Users Grid -->
+    <div
+      v-else
+      class="divide-y divide-gray-100"
+    >
+      <div
+        v-for="user in users"
+        :key="user.id"
+        class="flex flex-col lg:flex-row lg:items-center justify-between px-6 py-5 hover:bg-amber-50/40 transition"
+      >
+        <!-- User Info -->
+        <div class="flex-1">
+          <div class="flex items-center gap-3">
+
+            <!-- Avatar -->
+            <div
+              class="w-11 h-11 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white font-semibold"
+            >
+              {{ user.email?.charAt(0).toUpperCase() }}
             </div>
-          </template>
+
+            <div>
+              <h3 class="font-semibold text-gray-900">
+                {{ user.fullName }}
+              </h3>
+
+              <p class="text-sm text-gray-500">
+                {{ user.email }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Roles -->
+        <div class="mt-4 lg:mt-0 lg:w-52">
+          <div class="flex flex-wrap gap-2">
+            <span
+              v-for="role in user.roles"
+              :key="role"
+              class="px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700"
+            >
+              {{ role }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Status -->
+        <div class="mt-4 lg:mt-0 lg:w-36">
+          <span
+            :class="
+              user.isActive
+                ? 'bg-green-100 text-green-700'
+                : 'bg-red-100 text-red-700'
+            "
+            class="px-3 py-1 rounded-full text-xs font-semibold"
+          >
+            {{ user.isActive ? 'Active' : 'Disabled' }}
+          </span>
+        </div>
+
+        <!-- Actions -->
+        <div class="mt-4 lg:mt-0">
+          <button
+            @click="toggleUserStatus(user)"
+            :class="
+              user.isActive
+                ? 'bg-red-50 text-red-600 hover:bg-red-100'
+                : 'bg-green-50 text-green-600 hover:bg-green-100'
+            "
+            class="px-4 py-2 rounded-lg text-sm font-medium transition"
+          >
+            {{ user.isActive ? 'Disable User' : 'Enable User' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</template>
         </main>
       </div>
     </div>

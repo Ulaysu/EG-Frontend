@@ -15,7 +15,7 @@ export async function getDashboardStats() {
 
 export async function getRecentBookings() {
   const payload = await Request(
-    '/v1/admin/bookings?sortBy=bookingdate&isAscending=false&pageNumber=1&pageSize=10'
+    '/admin/bookings?sortBy=bookingdate&isAscending=false&pageNumber=1&pageSize=5'
   )
 
   if (!Array.isArray(payload)) {
@@ -33,6 +33,21 @@ export async function getPaymentSummary() {
 
   if (!payload || typeof payload !== 'object') {
     throw createAppError('Unexpected payment summary response format.', {
+      code: 'INVALID_RESPONSE',
+      cause: payload
+    })
+  }
+
+  return payload
+}
+
+export async function getRecentPayments() {
+  const payload = await Request(
+    '/admin/payments?pageNumber=1&pageSize=5&sortBy=paymentdate&isAscending=false'
+  )
+
+  if (!Array.isArray(payload)) {
+    throw createAppError('Unexpected payments response format.', {
       code: 'INVALID_RESPONSE',
       cause: payload
     })
