@@ -1,15 +1,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import axios from 'axios'
+import {getDashboardStats, getRecentBookings} from  '@/services/adminService'
 
-// ---------- Config ----------
-const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || 'http://localhost:5000/api'
-const api = axios.create({ baseURL: API_BASE_URL })
-api.interceptors.request.use((cfg) => {
-  const token = localStorage.getItem('admin_token')
-  if (token) cfg.headers.Authorization = `Bearer ${token}`
-  return cfg
-})
 
 // ---------- State ----------
 const activeNav = ref('dashboard')
@@ -33,31 +25,25 @@ const pageTitle = computed(() => navItems.find(n => n.id === activeNav.value)?.l
 
 // ---------- Data loading ----------
 async function loadDashboard() {
-  loading.value = true
+   loading.value = true
+
   try {
-    const [s, b, p] = await Promise.all([
-      api.get('/Admin/dashboard'),
-      api.get('/Admin/recent-bookings'),
-      api.get('/Admin/recent-payments'),
-    ])
-    stats.value = s.data
-    recentBookings.value = b.data
-    recentPayments.value = p.data
-  } catch (e) {
-    console.error('Failed to load dashboard', e)
-    // Demo fallback data so the UI is never empty
-    stats.value = { totalUsers: 1248, totalGuides: 36, totalTours: 84, totalBookings: 512, revenue: 184320 }
-    recentBookings.value = [
-      { bookingId: 'BK-1042', tourName: 'River Gambia Safari', customer: 'Aisha Diallo', status: 'Confirmed', amount: 420, bookingDate: '2026-06-14' },
-      { bookingId: 'BK-1041', tourName: 'Kunta Kinteh Island', customer: 'James Owens', status: 'Pending', amount: 180, bookingDate: '2026-06-13' },
-      { bookingId: 'BK-1040', tourName: 'Abuko Nature Reserve', customer: 'Mariama Sow', status: 'Confirmed', amount: 95, bookingDate: '2026-06-12' },
-    ]
-    recentPayments.value = [
-      { paymentId: 'PAY-9921', paymentMethod: 'Card', amount: 420, status: 'Success', paymentDate: '2026-06-14' },
-      { paymentId: 'PAY-9920', paymentMethod: 'Mobile Money', amount: 180, status: 'Pending', paymentDate: '2026-06-13' },
-      { paymentId: 'PAY-9919', paymentMethod: 'Card', amount: 95, status: 'Success', paymentDate: '2026-06-12' },
-    ]
-  } finally {
+    const dashboard = await getDashboardStats()
+
+    stats.value = {
+      totalUsers: dashboard.totalUsers,
+      totalGuides: dashboard.totalGuides,
+      totalTours: dashboard.totalTours,
+      totalBookings: dashboard.totalBookings,
+      revenue: dashboard.revenue
+    }
+
+
+  }
+  catch (error) {
+    console.error('Failed to load dashboard stats', error)
+  }
+  finally {
     loading.value = false
   }
 }
@@ -106,6 +92,21 @@ onMounted(loadDashboard)
 
 <template>
   <div class="min-h-screen bg-gradient-to-br from-amber-50/40 via-white to-orange-50/30 text-gray-800">
+
+  <button
+    @click="sidebarOpen = true"
+    class="fixed top-4 left-4 z-50 lg:hidden bg-amber-500 text-white p-3 rounded-lg shadow-lg"
+  >
+    <svg
+      class="w-5 h-5"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+    >
+      <path d="M4 6h16M4 12h16M4 18h16" />
+    </svg>
+  </button>
     <!-- Mobile sidebar overlay -->
     <div
       v-if="sidebarOpen"
