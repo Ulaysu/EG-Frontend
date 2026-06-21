@@ -18,16 +18,21 @@
 
         <!-- Desktop Navigation -->
         <nav class="hidden md:flex items-center space-x-8">
-          <router-link :to="{name: 'tour'}" class="text-slate-600 hover:text-amber-600 transition-colors font-medium">Experiences</router-link >
+          <router-link 
+          v-if="!authStore.isAuthenticated || authStore.isUser"
+          :to="{name: 'tour'}" 
+          class="text-slate-600 hover:text-amber-600 transition-colors font-medium">
+          Experiences
+        </router-link >
           <router-link
-            v-if="authStore.isAuthenticated"
+            v-if="authStore.isAdmin"
             :to="{name: 'dashboard'}"
             class="text-slate-600 hover:text-amber-600 transition-colors font-medium"
           >
             Dashboard
           </router-link>
           <router-link
-            v-if="authStore.isAuthenticated"
+            v-if="authStore.isUser"
             :to="{name: 'bookings'}"
             class="text-slate-600 hover:text-amber-600 transition-colors font-medium"
           >
@@ -42,14 +47,14 @@
           </router-link>
 
           <router-link
-            v-if="authStore.isAuthenticated"
+            v-if="authStore.isGuide"
             :to="{ name: 'create-tour' }"
             class="text-slate-600 hover:text-amber-600 transition-colors font-medium"
           >
             Create Tour
           </router-link>
                 <router-link
-            v-if="authStore.isAuthenticated"
+            v-if="authStore.isGuide"
             :to="{ name: 'guide-tours' }"
             class="text-slate-600 hover:text-amber-600 transition-colors font-medium"
           >
@@ -101,7 +106,7 @@
         <nav class="flex flex-col space-y-3 text-slate-600 font-medium">
           <router-link :to="{name: 'tour'}" class="hover:text-amber-600 transition-colors" @click="closeMobileMenu">Experiences</router-link>
           <router-link
-            v-if="authStore.isAuthenticated"
+            v-if="authStore.isAdmin"
             :to="{name: 'dashboard'}"
             class="hover:text-amber-600 transition-colors"
             @click="closeMobileMenu"
@@ -109,7 +114,7 @@
             Dashboard
           </router-link>
           <router-link
-            v-if="authStore.isAuthenticated"
+            v-if="authStore.isUser"
             :to="{name: 'bookings'}"
             class="hover:text-amber-600 transition-colors"
             @click="closeMobileMenu"
@@ -125,14 +130,14 @@
             Profile
           </router-link>
           <router-link
-            v-if="authStore.isAuthenticated"
+            v-if="authStore.isGuide"
             :to="{ name: 'create-tour' }"
             class="text-slate-600 hover:text-amber-600 transition-colors font-medium"
           >
             Create Tour
           </router-link>
           <router-link
-            v-if="authStore.isAuthenticated"
+            v-if="authStore.isGuide"
             :to="{ name: 'guide-tours' }"
             class="text-slate-600 hover:text-amber-600 transition-colors font-medium"
           >
