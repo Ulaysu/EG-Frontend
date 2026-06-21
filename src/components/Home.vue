@@ -5,7 +5,7 @@
     <!--<Problems/>-->
     <!--<solutions/>-->
     <!--<PlatformFeatures/>-->
-    <GuideFeatures/>
+    <!----<GuideFeatures/>-->
     <!--<RevenueModel/>-->
     <!--<MarketPotential/>-->
     <Testimonials/>

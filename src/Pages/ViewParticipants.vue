@@ -134,8 +134,9 @@ function exportCSV() {
 }
 
 function goBack() {
-  router.push(`/guide/tours/${tourId.value}`)
+  router.push(`/guide/tours/guidedetails/${tourId.value}`)
 }
+
 </script>
 
 <template>
