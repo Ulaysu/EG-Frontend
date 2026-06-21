@@ -9,6 +9,8 @@
     <!--<RevenueModel/>-->
     <!--<MarketPotential/>-->
     <Testimonials/>
+    <Footer />
+
 </template>
 <script setup>
     import { ref, onMounted, computed } from 'vue'
@@ -22,5 +24,6 @@
     import RevenueModel from './RevenueModel.vue'
     import MarketPotential from './MarketPotential.vue'
     import Testimonials from './Testimonials.vue'
+    import Footer from './footer.vue'
 
 </script>
