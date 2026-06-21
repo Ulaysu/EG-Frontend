@@ -6,6 +6,7 @@ import {getDashboardStats, getRecentBookings, getRecentPayments,
 } from  '@/services/adminService'
 
 
+
 // ---------- State ----------
 const activeNav = ref('dashboard')
 const sidebarOpen = ref(false)

@@ -181,7 +181,27 @@ const handleSubmit = async () => {
 
   try {
     await authStore.login(email.value.trim(), password.value);
-    await router.replace(getRedirectPath());
+    
+    // Ensure we have the latest user data and roles
+    await authStore.fetchMe();
+
+    // Respect redirect query if one exists
+    const redirect = route.query.redirect;
+    if (typeof redirect === 'string' && redirect.startsWith('/')) {
+      await router.replace(redirect);
+      return;
+    }
+
+    // Role-based redirects
+    if (authStore.user?.roles?.includes('Admin')) {
+      await router.replace({ name: 'admin-dashboard' });
+    }
+    else if (authStore.user?.roles?.includes('Guide')) {
+      await router.replace({ name: 'guide-tours' });
+    }
+    else {
+      await router.replace({ name: 'home' });
+    }
   } catch (error) {
     errorMessage.value = error?.message || 'Unable to sign in. Please try again.';
   } finally {
