@@ -86,7 +86,7 @@
       </div>
 
       <div class="text-center mt-12">
-        <button class="bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-lg">
+        <button @click="viewAllExperiences" class="bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-lg">
           View All Experiences ➜
         </button>
       </div>
@@ -95,4 +95,11 @@
 
 </template>
 <script setup>
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
+
+function viewAllExperiences() {
+  router.push('/tours');
+}
 </script>

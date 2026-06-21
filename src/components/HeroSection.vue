@@ -1,6 +1,6 @@
 <template>
        <!-- Hero Section -->
-  <section class="relative  md:pt-32 pb-16 md:pb-24 overflow-hidden">
+  <section class="relative md:pt-32 pb-16 md:pb-24 overflow-hidden flex items-center min-h-[80vh]">
     <!-- Background Image -->
     <div class="absolute inset-0 z-0">
       <img 
@@ -12,9 +12,9 @@
     </div>
 
     <div class="container mx-auto px-4 relative z-10">
-      <div class="grid lg:grid-cols-2 gap-12 items-center">
+      <div class="flex justify-center">
         <!-- Hero Content -->
-        <div class="text-center lg:text-left">
+        <div class="text-center max-w-3xl mx-auto">
           <div class="mb-6 inline-block bg-amber-100 text-amber-800 px-4 py-1.5 rounded-full">
             #1 Tour Booking Platform in The Gambia
           </div>
@@ -23,20 +23,20 @@
             Explore Gambia – Book Authentic Tours & Cultural Experiences Online
           </h1>
 
-          <p class="text-xl text-slate-600 mb-8 max-w-lg mx-auto lg:mx-0">
+          <p class="text-xl text-slate-600 mb-8 max-w-2xl mx-auto">
             Connect with verified local guides and explore the Smiling Coast of Africa. Discover, book, and experience the real Gambia.
           </p>
 
-          <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-            <button class="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white text-lg px-8 py-6 rounded-full">
+          <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-center">
+            <button @click="browse" class="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white text-lg px-8 py-6 rounded-full">
               Browse Experiences
             </button>
-            <button class="border border-amber-500 text-amber-600 hover:bg-amber-50 text-lg px-8 py-6 rounded-full">
+            <!--<button class="border border-amber-500 text-amber-600 hover:bg-amber-50 text-lg px-8 py-6 rounded-full">
               List Your Tour
-            </button>
+            </button>-->
           </div>
 
-          <div class="mt-8 flex items-center justify-center lg:justify-start space-x-4 text-sm text-slate-500">
+          <div class="mt-8 flex items-center justify-center lg:justify-center space-x-4 text-sm text-slate-500">
             <div class="flex items-center">
               <CheckCircle class="text-green-500 mr-1"/>
               <span>Verified Guides</span>
@@ -53,7 +53,8 @@
         </div>
 
         <!-- Search Box -->
-        <div class="relative">
+        <!--
+          <div class="relative">
           <div class="bg-white rounded-2xl shadow-2xl p-6 border border-slate-100">
             <h3 class="text-xl font-bold text-slate-800 mb-6">Find Your Perfect Experience</h3>
 
@@ -128,10 +129,12 @@
             </div>
           </div>
 
-          <!-- Floating Elements -->
+           Floating Elements 
           <div class="absolute -top-4 -right-4 w-24 h-24 bg-amber-100 rounded-full opacity-70"></div>
           <div class="absolute -bottom-6 -left-6 w-32 h-32 bg-orange-100 rounded-full opacity-70"></div>
         </div>
+        -->
+        
       </div>
     </div>
   </section>
@@ -148,4 +151,11 @@ import {
   Users,
   Compass, 
   CheckCircle} from 'lucide-vue-next'
+
+  import { useRouter } from 'vue-router'
+  const router = useRouter()
+
+  function browse() {
+  router.push(`/tours`)
+}
 </script>
