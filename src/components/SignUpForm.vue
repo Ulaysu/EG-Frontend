@@ -122,7 +122,7 @@
         </button>
       </form>
 
-      <div class="space-y-4">
+      <!-- <div class="space-y-4">
         <div class="relative">
           <hr class="bg-slate-200 h-px border-0 my-8" />
           <span class="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white px-3 text-xs text-slate-500">
@@ -167,7 +167,7 @@
             Facebook
           </button>
         </div>
-      </div>
+      </div>-->
 
       <div class="pt-4 border-t border-slate-100">
         <div class="flex items-center justify-center space-x-6 text-xs text-slate-600">

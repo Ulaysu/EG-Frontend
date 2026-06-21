@@ -70,7 +70,7 @@
         </button>
       </form>
 
-      <div class="relative">
+      <!--  <div class="relative">
         <hr class="bg-slate-200 h-px border-0 my-8" />
         <span class="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white px-3 text-sm text-slate-500">
           or continue with
@@ -94,7 +94,7 @@
           </div>
           Facebook
         </button>
-      </div>
+      </div>-->
 
       <div class="text-center">
         <p class="text-slate-600">
