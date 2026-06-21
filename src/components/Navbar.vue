@@ -104,7 +104,11 @@
         <!-- Mobile Navigation -->
        <div v-if="mobileMenuOpen" class="md:hidden mt-4 space-y-4">
         <nav class="flex flex-col space-y-3 text-slate-600 font-medium">
-          <router-link :to="{name: 'tour'}" class="hover:text-amber-600 transition-colors" @click="closeMobileMenu">Experiences</router-link>
+          <router-link 
+          v-if="!authStore.isAuthenticated || authStore.isUser"
+          :to="{name: 'tour'}" 
+          class="hover:text-amber-600 transition-colors" @click="closeMobileMenu">
+          Experiences</router-link>
           <router-link
             v-if="authStore.isAdmin"
             :to="{name: 'dashboard'}"
