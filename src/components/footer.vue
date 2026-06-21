@@ -134,8 +134,8 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
               <svg viewBox="0 0 24 24" class="mt-0.5 h-4 w-4 shrink-0 fill-current text-[#d4a857]" aria-hidden="true">
                 <path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.58 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1 11.4 11.4 0 0 0 .58 3.6 1 1 0 0 1-.25 1l-2.23 2.2z"/>
               </svg>
-              <a href="tel:+220000000" class="transition-colors hover:text-[#d4a857]">
-                +220 XXX XXX
+              <a href="tel:+2206147209" class="transition-colors hover:text-[#d4a857]">
+                +220 6147209
               </a>
             </li>
             <li class="flex items-start gap-3">
