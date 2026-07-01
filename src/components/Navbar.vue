@@ -1,197 +1,170 @@
+<script setup>
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { Leaf, Menu, X } from 'lucide-vue-next'
+import { useAuthStore } from '@/stores/authStore'
+
+const O = '#F97316'
+const mobileMenuOpen = ref(false)
+const router = useRouter()
+const authStore = useAuthStore()
+
+const closeMobileMenu = () => {
+  mobileMenuOpen.value = false
+}
+
+const handleLogout = async () => {
+  authStore.logout()
+  closeMobileMenu()
+  await router.replace('/home')
+}
+</script>
+
 <template>
-        <header class="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-amber-100">
-    <div class="container mx-auto px-4">
-      <div class="flex items-center justify-between h-16 md:h-20">
-        <!-- Logo -->
-        <router-link :to="{name: 'home'}" class="text-2xl font-bold text-amber-600">
-          <div class="flex items-center space-x-2">
-          <div class="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg flex items-center justify-center">
-            <span class="text-white font-bold text-lg">EG</span>
-          </div>
-          <div>
-            <div class="text-xl font-bold text-slate-800">Explore Gambia</div>
-            <div class="text-xs text-amber-600 font-medium">Discover the Smiling Coast</div>
-          </div>
+  <nav class="fixed left-0 right-0 top-0 z-50 border-b border-orange-100/80 bg-white/96 shadow-sm backdrop-blur-lg">
+    <div class="mx-auto flex h-[68px] max-w-7xl items-center justify-between px-6">
+      <router-link :to="{ name: 'home' }" class="group flex items-center gap-2.5">
+        <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#F97316] to-orange-600 shadow-md shadow-orange-200 transition-transform group-hover:scale-105">
+          <Leaf :size="17" class="text-white" />
         </div>
-        </router-link>
-          
+        <span class="font-['Poppins'] text-[17px] font-bold text-[#1E293B]">
+          Explore <span :style="{ color: O }">Gambia</span>
+        </span>
+      </router-link>
 
-        <!-- Desktop Navigation -->
-        <nav class="hidden md:flex items-center space-x-8">
-          <router-link 
+      <div class="hidden items-center gap-8 lg:flex">
+        <router-link :to="{ name: 'home' }" class="text-[13.5px] font-medium text-slate-600 transition-colors hover:text-[#F97316]">Home</router-link>
+        <router-link
           v-if="!authStore.isAuthenticated || authStore.isUser"
-          :to="{name: 'tour'}" 
-          class="text-slate-600 hover:text-amber-600 transition-colors font-medium">
+          :to="{ name: 'tour' }"
+          class="text-[13.5px] font-medium text-slate-600 transition-colors hover:text-[#F97316]"
+        >
           Experiences
-        </router-link >
-          <router-link
-            v-if="authStore.isAdmin"
-            :to="{name: 'dashboard'}"
-            class="text-slate-600 hover:text-amber-600 transition-colors font-medium"
-          >
-            Dashboard
-          </router-link>
-          <router-link
-            v-if="authStore.isUser"
-            :to="{name: 'bookings'}"
-            class="text-slate-600 hover:text-amber-600 transition-colors font-medium"
-          >
-            Bookings
-          </router-link>
-          <router-link
-            v-if="authStore.isAuthenticated"
-            :to="{name: 'profile'}"
-            class="text-slate-600 hover:text-amber-600 transition-colors font-medium"
-          >
-            Profile
-          </router-link>
-
-          <router-link
-            v-if="authStore.isGuide"
-            :to="{ name: 'create-tour' }"
-            class="text-slate-600 hover:text-amber-600 transition-colors font-medium"
-          >
-            Create Tour
-          </router-link>
-                <router-link
-            v-if="authStore.isGuide"
-            :to="{ name: 'guide-tours' }"
-            class="text-slate-600 hover:text-amber-600 transition-colors font-medium"
-          >
-            My Tours
-          </router-link>
-
-
-          <div v-if="!authStore.isAuthenticated" class="flex items-center space-x-3">
-            <router-link :to="{name: 'login'}">
-              <button class="border border-amber-500 text-amber-600 hover:bg-amber-50 px-4 py-2 rounded-md">
-              Log In
-            </button>
-            </router-link>
-            <router-link :to="{name: 'signup'}">
-              <button class="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white px-4 py-2 rounded-md">
-              Sign Up
-            </button>
-            </router-link>
-             
-          </div>
-          <button
-            v-else
-            type="button"
-            class="border border-amber-500 text-amber-600 hover:bg-amber-50 px-4 py-2 rounded-md"
-            @click="handleLogout"
-          >
-            Log Out
-          </button>
-        </nav>
-
-        <!-- Mobile Menu Button -->
-       <!-- Mobile Menu Button -->
-        <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden text-slate-700 focus:outline-none">
-          <svg v-if="!mobileMenuOpen" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none"
-            viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-          <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none"
-            viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
+        </router-link>
+        <router-link
+          v-if="authStore.isGuide"
+          :to="{ name: 'create-tour' }"
+          class="text-[13.5px] font-medium text-slate-600 transition-colors hover:text-[#F97316]"
+        >
+          Become a Guide
+        </router-link>
+        <router-link
+          v-if="authStore.isGuide"
+          :to="{ name: 'guide-tours' }"
+          class="text-[13.5px] font-medium text-slate-600 transition-colors hover:text-[#F97316]"
+        >
+          My Tours
+        </router-link>
+        <router-link
+          v-if="authStore.isUser"
+          :to="{ name: 'bookings' }"
+          class="text-[13.5px] font-medium text-slate-600 transition-colors hover:text-[#F97316]"
+        >
+          Bookings
+        </router-link>
+        <router-link
+          v-if="authStore.isAuthenticated"
+          :to="{ name: 'profile' }"
+          class="text-[13.5px] font-medium text-slate-600 transition-colors hover:text-[#F97316]"
+        >
+          Profile
+        </router-link>
+        <router-link
+          v-if="authStore.isAdmin"
+          :to="{ name: 'dashboard' }"
+          class="text-[13.5px] font-medium text-slate-600 transition-colors hover:text-[#F97316]"
+        >
+          Dashboard
+        </router-link>
       </div>
 
-        <!-- Mobile Navigation -->
-       <div v-if="mobileMenuOpen" class="md:hidden mt-4 space-y-4">
-        <nav class="flex flex-col space-y-3 text-slate-600 font-medium">
-          <router-link 
-          v-if="!authStore.isAuthenticated || authStore.isUser"
-          :to="{name: 'tour'}" 
-          class="hover:text-amber-600 transition-colors" @click="closeMobileMenu">
-          Experiences</router-link>
-          <router-link
-            v-if="authStore.isAdmin"
-            :to="{name: 'dashboard'}"
-            class="hover:text-amber-600 transition-colors"
-            @click="closeMobileMenu"
-          >
-            Dashboard
+      <div class="hidden items-center gap-2 lg:flex">
+        <template v-if="!authStore.isAuthenticated">
+          <router-link :to="{ name: 'login' }" class="rounded-xl px-4 py-2 text-[13.5px] font-semibold text-slate-700 transition-all hover:bg-orange-50 hover:text-[#F97316]">
+            Login
           </router-link>
-          <router-link
-            v-if="authStore.isUser"
-            :to="{name: 'bookings'}"
-            class="hover:text-amber-600 transition-colors"
-            @click="closeMobileMenu"
-          >
-            Bookings
-          </router-link>
-          <router-link
-            v-if="authStore.isAuthenticated"
-            :to="{name: 'profile'}"
-            class="hover:text-amber-600 transition-colors"
-            @click="closeMobileMenu"
-          >
-            Profile
-          </router-link>
-          <router-link
-            v-if="authStore.isGuide"
-            :to="{ name: 'create-tour' }"
-            class="text-slate-600 hover:text-amber-600 transition-colors font-medium"
-          >
-            Create Tour
-          </router-link>
-          <router-link
-            v-if="authStore.isGuide"
-            :to="{ name: 'guide-tours' }"
-            class="text-slate-600 hover:text-amber-600 transition-colors font-medium"
-          >
-            My Tours
-          </router-link>
-        </nav>
-        <div v-if="!authStore.isAuthenticated" class="flex flex-col gap-2 mt-4">
-          <router-link :to="{name: 'login'}">
-            <button class="border border-amber-500 text-amber-600 hover:bg-amber-50 px-4 py-2 rounded-md" @click="closeMobileMenu">
-              Log In
-            </button>
-          </router-link>
-          <router-link :to="{name: 'signup'}">
-            <button class="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white px-4 py-2 rounded-md" @click="closeMobileMenu">
+          <router-link :to="{ name: 'signup' }" class="rounded-xl bg-[#F97316] px-5 py-2.5 text-[13.5px] font-bold text-white shadow-md shadow-orange-200 transition-all hover:bg-orange-500 hover:shadow-lg hover:shadow-orange-300">
             Sign Up
-          </button>
           </router-link>
-        </div>
+        </template>
         <button
           v-else
           type="button"
-          class="border border-amber-500 text-amber-600 hover:bg-amber-50 px-4 py-2 rounded-md"
+          class="rounded-xl px-4 py-2 text-[13.5px] font-semibold text-slate-700 transition-all hover:bg-orange-50 hover:text-[#F97316]"
           @click="handleLogout"
         >
           Log Out
         </button>
       </div>
 
-
+      <button class="p-1 lg:hidden" type="button" aria-label="Toggle navigation" @click="mobileMenuOpen = !mobileMenuOpen">
+        <X v-if="mobileMenuOpen" :size="22" />
+        <Menu v-else :size="22" />
+      </button>
     </div>
-  </header>
+
+    <div v-if="mobileMenuOpen" class="flex flex-col gap-4 border-t border-orange-100 bg-white px-6 py-5 shadow-lg lg:hidden">
+      <router-link :to="{ name: 'home' }" class="text-sm font-semibold text-slate-700 transition-colors hover:text-[#F97316]" @click="closeMobileMenu">Home</router-link>
+      <router-link
+        v-if="!authStore.isAuthenticated || authStore.isUser"
+        :to="{ name: 'tour' }"
+        class="text-sm font-semibold text-slate-700 transition-colors hover:text-[#F97316]"
+        @click="closeMobileMenu"
+      >
+        Experiences
+      </router-link>
+      <router-link
+        v-if="authStore.isGuide"
+        :to="{ name: 'create-tour' }"
+        class="text-sm font-semibold text-slate-700 transition-colors hover:text-[#F97316]"
+        @click="closeMobileMenu"
+      >
+        Become a Guide
+      </router-link>
+      <router-link
+        v-if="authStore.isGuide"
+        :to="{ name: 'guide-tours' }"
+        class="text-sm font-semibold text-slate-700 transition-colors hover:text-[#F97316]"
+        @click="closeMobileMenu"
+      >
+        My Tours
+      </router-link>
+      <router-link
+        v-if="authStore.isUser"
+        :to="{ name: 'bookings' }"
+        class="text-sm font-semibold text-slate-700 transition-colors hover:text-[#F97316]"
+        @click="closeMobileMenu"
+      >
+        Bookings
+      </router-link>
+      <router-link
+        v-if="authStore.isAuthenticated"
+        :to="{ name: 'profile' }"
+        class="text-sm font-semibold text-slate-700 transition-colors hover:text-[#F97316]"
+        @click="closeMobileMenu"
+      >
+        Profile
+      </router-link>
+      <router-link
+        v-if="authStore.isAdmin"
+        :to="{ name: 'dashboard' }"
+        class="text-sm font-semibold text-slate-700 transition-colors hover:text-[#F97316]"
+        @click="closeMobileMenu"
+      >
+        Dashboard
+      </router-link>
+
+      <div v-if="!authStore.isAuthenticated" class="mt-1 flex gap-3">
+        <router-link :to="{ name: 'login' }" class="flex-1 rounded-xl border-2 border-[#F97316] py-2.5 text-center text-sm font-bold text-[#F97316] transition-all hover:bg-orange-50" @click="closeMobileMenu">
+          Login
+        </router-link>
+        <router-link :to="{ name: 'signup' }" class="flex-1 rounded-xl bg-[#F97316] py-2.5 text-center text-sm font-bold text-white transition-all hover:bg-orange-500" @click="closeMobileMenu">
+          Sign Up
+        </router-link>
+      </div>
+      <button v-else type="button" class="rounded-xl border-2 border-[#F97316] py-2.5 text-sm font-bold text-[#F97316] transition-all hover:bg-orange-50" @click="handleLogout">
+        Log Out
+      </button>
+    </div>
+  </nav>
 </template>
-<script setup>
-    import { ref } from 'vue';
-    import { useRouter } from 'vue-router';
-    import { useAuthStore } from '@/stores/authStore';
-
-    const mobileMenuOpen = ref(false);
-    const router = useRouter();
-    const authStore = useAuthStore();
-
-    const closeMobileMenu = () => {
-      mobileMenuOpen.value = false;
-    };
-
-    const handleLogout = async () => {
-      authStore.logout();
-      closeMobileMenu();
-      await router.replace('/home');
-    };
-
-    
-</script>
